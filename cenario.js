@@ -116,17 +116,20 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   solid(6.2,recH,.24,-5.9,recH/2,8,white); solid(6.2,recH,.24,5.9,recH/2,8,white);
   solid(.24,recH,14,-9,recH/2,-1,white);
   solid(.24,recH,3.5,-9,recH/2,6.25,white);
-  glass(.12,recH-1.2,9.4,9,(recH-1.2)/2+.2,2.3); addCollider(9,2.3,.12,9.4);
-  solid(.24,recH,4.1,9,recH/2,-5.95,white);
-  solid(.24,recH,1.6,9,recH/2,7.2,white);
+  // Abertura lateral direita de 3,4 m, sem porta; vidro preservado junto à entrada.
+  solid(.24,recH,6.3,9,recH/2,-4.85,white);
+  glass(.12,recH-1.2,5.5,9,(recH-1.2)/2+.2,4.45); addCollider(9,4.45,.12,5.5);
+  box(.24,1.0,5.5,9,5.0,4.45,white);
+  solid(.24,recH,.8,9,recH/2,7.6,white);
+  box(.24,1.1,3.4,9,4.95,0,white);
   for(const z of [-8,8]) box(recW,.28,.34,0,recH+.08,z,orange);
   for(const x of [-9,9]) box(.34,.28,recD+.2,x,recH+.08,0,orange);
 
   // Corredores laterais internos
   solid(9,recH,.18,-13,recH/2,-3.5,white); solid(9,recH,.18,-13,recH/2,3.5,white);
-  solid(9,recH,.18,13,recH/2,-3.5,white); solid(9,recH,.18,13,recH/2,3.5,white);
-  solid(.18,recH,7.4,-17.4,recH/2,0,white); solid(.18,recH,7.4,17.4,recH/2,0,white);
-  tile(8,3.2,-13,0,0xe4dfd0); tile(8,3.2,13,0,0xe4dfd0);
+
+  solid(.18,recH,7.4,-17.4,recH/2,0,white);
+  tile(8,3.2,-13,0,0xe4dfd0); 
 
   // Portas principais maiores e mais integradas às paredes
   function doubleDoor(z, label){
@@ -151,18 +154,44 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   doubleDoor(-8,'');
 
   // Balcões e objetos
-  marbleDesk(3.8,1.08,1.05,-5.2,.56,-2.2); deskMonitor(-5.2,.56,-1.95);
-  marbleDesk(3.8,1.08,1.05, 5.2,.56,-2.2); deskMonitor(5.2,.56,-1.95);
+  marbleDesk(3.8,1.08,1.05,-5.2,.56,-2.2); deskMonitor(-5.2,1.18,-1.95);
+  marbleDesk(3.8,1.08,1.05, 5.2,.56,-2.2); deskMonitor(5.2,1.18,-1.95);
   waitingChairRow(-6.6,3.8,4); waitingChairRow(3.8,3.8,4);
   // bebedouro mais detalhado
   box(.58,1.18,.48,-8.0,.6,3.35,0xe4e8ea); box(.4,.3,.4,-8.0,1.38,3.35,0x73b5d2); box(.24,.12,.03,-8.0,.86,3.57,dark); box(.18,.05,.14,-8.0,1.58,3.35,0xf4f8fb); box(.3,.07,.3,-8.0,.04,3.35,0xc4cad0); addCollider(-8.0,3.35,.6,.5);
 
-  // Sala lateral visível pelo vidro
-  tile(7.2,8,12.8,2.5,0xded9cf);
-  for(const x of [11.3,14.0]){ box(1.8,.12,1,x,.82,3.2,0xc1a77d); for(const dx of [-.72,.72]) box(.08,.8,.08,x+dx,.4,3.2,gray); box(.7,.45,.14,x,1.12,3.0,dark); addCollider(x,3.2,1.8,1); }
-  solid(7.8,recH,.2,12.8,recH/2,6.6,white); solid(.2,recH,8,16.6,recH/2,2.6,white);
-
-  tile(4,9,-12.8,-8.5,0xe0ddcf); tile(4,9,12.8,-8.5,0xe0ddcf);
+  // Sala lateral envidraçada preservada, sem bloquear o novo acesso.
+  tile(7,5.3,12.6,4.5,0xded9cf);
+  for(const x of [11.3,14.0]){ box(1.8,.12,1,x,.82,5.2,0xc1a77d); for(const dx of [-.72,.72]) box(.08,.8,.08,x+dx,.4,5.2,gray); box(.7,.45,.14,x,1.12,5.0,dark); addCollider(x,5.2,1.8,1); }
+  solid(7,recH,.2,12.6,recH/2,7.2,white); solid(.2,recH,5.3,16.1,recH/2,4.55,white);
+  // Corredor da recepção para o pátio da cantina.
+  tile(10,3.4,14,0); for(const z of [-1.8,1.8]) solid(10,4.5,.18,14,2.25,z,white);
+  // Pátio central e dois caminhos contornando a cantina.
+  tile(15,14,26.5,0,0xded9cf);
+  for(let x=19.5;x<34;x++) for(let z=-6.5;z<7;z++) box(.97,.018,.97,x,.074,z,(Math.floor(x+z)%2)?0xe5e2d9:0xd9d8cf);
+  solid(15,4.5,.2,26.5,2.25,-7,white);
+  solid(7,4.5,.2,30.5,2.25,7,white); solid(4,4.5,.2,21,2.25,7,white);
+  solid(.2,4.5,14,34,2.25,0,white);
+  // Cantina central, balcão voltado para a chegada, vitrine e alimentos.
+  tile(5,6,26,0,0xcbbba4);
+  solid(5,3.6,.18,26,1.8,-3,white); solid(5,3.6,.18,26,1.8,3,white); solid(.18,3.6,6,28.5,1.8,0,white);
+  // Balcão longitudinal na face oeste; caminhos livres nos dois lados.
+  solid(.75,1.15,5.6,23.5,.58,0,0xe8dcc6); box(.91,.12,5.8,23.5,1.2,0,white);
+  for(const z of [-1.8,-.9,0,.9,1.8]) {box(.36,.15,.42,23.5,1.32,z,0xc68a42); box(.32,.14,.35,23.5,1.46,z,0xe8bb73);}
+  box(.08,.65,2.2,23.05,1.58,0,0x8ac6dc).material=new T.MeshPhongMaterial({color:0xaedced,transparent:true,opacity:.35});
+  box(5.4,.2,6.4,26,3.7,0,blue); const cs=sign('CANTINA',23.2,3.25,0,4,.6); cs.rotation.y=-Math.PI/2;
+  // Duas mesas redondas no pátio, com circulação nos lados.
+  for(const z of [-4.8,4.8]){const m=new T.Mesh(new T.CylinderGeometry(.75,.75,.12,12),new T.MeshLambertMaterial({color:0xc5a67d}));m.position.set(30.4,.87,z);scene.add(m);box(.18,.8,.18,30.4,.4,z,gray);addCollider(30.4,z,1.5,1.5);chair(32,z);}
+  // Sala de TI no lado oposto do pátio (Z positivo).
+  tile(10,10,25,12,0xded9cf);
+  for(const x of [20,30]) solid(.22,4.7,10,x,2.35,12,white);
+  solid(10,4.7,.22,25,2.35,17,white);
+  for(const x of [21.5,28.5]) solid(3,4.7,.22,x,2.35,7,white);
+  box(4,1.6,.22,25,3.9,7,white); const tiSign=sign('SALA DE TI',25,3.9,6.86,3.7,.55); tiSign.rotation.y=Math.PI; tiSign.material.side=T.DoubleSide;
+  for(const x of [22,28]) for(const z of [10,13,15.5]) {solid(2.2,.12,.85,x,.85,z,0xc1a77d);for(const dx of [-.85,.85])box(.08,.8,.08,x+dx,.4,z,gray);deskMonitor(x,.92,z+.2);box(.48,.055,.19,x,.95,z-.22,dark);box(.13,.42,.36,x+.8,1.12,z+.1,dark);chair(x,z-1);}
+  box(5,1.7,.12,25,2.6,16.85,0xf5f5ef);box(5.15,.08,.16,25,1.71,16.8,gray);
+  solid(2,.12,.8,25,.85,15.8,0xc1a77d);deskMonitor(25,.92,15.8);
+  tile(4,9,-12.8,-8.5,0xe0ddcf);
 
   const marks = {
     doorman:{x:-3.0,z:23.3},
@@ -171,7 +200,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     lobby:{x:0,z:0}
   };
 
-  for(const x of [-20,-12,12,20]) for(const z of [-11,-3,9,17]){ if(x===12&&z===-3) continue; pavilion(x,z); }
+  for(const x of [-20,-12,12,20]) for(const z of [-11,-3,9,17]){ if(x>0 && (z<10 || x===20)) continue; pavilion(x,z); }
 
   const roof = new T.Group(); scene.add(roof);
   const cap = new T.Mesh(new T.SphereGeometry(1,20,8,0,Math.PI*2,0,Math.PI/2), new T.MeshLambertMaterial({color:0x205a92,flatShading:true}));

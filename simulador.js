@@ -95,11 +95,11 @@ function interact(){
   }
   if(near(world.marks.deskLeft,2.9) || near(world.marks.deskRight,2.9)){
     const d=createDialog('ATENDIMENTO', '<p>Olá! Bem-vindo ao Senac. Como posso ajudar?</p><button id="mat" style="padding:12px">Quero me matricular no curso de Assistente de Suporte e Manutenção de Computadores</button>');
-    if(state.enrolled){ d.querySelector('p').textContent='Sua matrícula no simulador já foi realizada. Em seguida, você poderá explorar a recepção e depois seguir para a sala de aula.'; d.querySelector('#mat').textContent='Continuar'; d.querySelector('#mat').onclick=()=>closeDialog(d); return; }
+    if(state.enrolled){ d.querySelector('p').textContent='Sua matrícula no simulador já foi realizada. Siga à direita da recepção, passe pela cantina e siga pelo corredor oposto até a sala de TI.'; d.querySelector('#mat').textContent='Continuar'; d.querySelector('#mat').onclick=()=>closeDialog(d); return; }
     d.querySelector('#mat').onclick=()=>{
       d.innerHTML='<b style="color:#f7941d">MATRÍCULA</b><form id="f"><p>Informe seu nome:</p><input id="name" required maxlength="60" minlength="2" style="font-size:16px;padding:10px;width:85%" placeholder="Nome do aluno"><p><button style="padding:10px">Confirmar matrícula</button></p></form>';
       const f=d.querySelector('#f'), input=d.querySelector('#name'); input.focus();
-      f.onsubmit=e=>{ e.preventDefault(); const name=input.value.trim(); if(name.length<2) return; state.studentName=name; state.enrolled=true; d.innerHTML='<b style="color:#f7941d">MATRÍCULA CONCLUÍDA</b><p>Bem-vindo, '+name+'! Sua matrícula simulada foi concluída. Agora explore a recepção. Na próxima etapa, você seguirá para a sala de aula e começará a conhecer os componentes do computador.</p><p><button id="cont" style="padding:12px">Continuar</button></p>'; showMission('Matrícula concluída! Explore a recepção ampliada.'); d.querySelector('#cont').onclick=()=>closeDialog(d); };
+      f.onsubmit=e=>{ e.preventDefault(); const name=input.value.trim(); if(name.length<2) return; state.studentName=name; state.enrolled=true; d.innerHTML='<b style="color:#f7941d">MATRÍCULA CONCLUÍDA</b><p>Bem-vindo, '+name+'! Sua matrícula simulada foi concluída. Siga pelo corredor à direita da recepção. Passe pela cantina e encontre a sala de TI no corredor do lado oposto.</p><p><button id="cont" style="padding:12px">Continuar</button></p>'; showMission('Matrícula concluída! Siga à direita, passe pela cantina e siga pelo corredor oposto até a sala de TI.'); d.querySelector('#cont').onclick=()=>closeDialog(d); };
     };
     return;
   }
@@ -114,7 +114,7 @@ window.addEventListener('resize',resize); if(window.ResizeObserver)new ResizeObs
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min((now-last)/1000,.05); last=now;
-  const p=player.g.position; world.update(p,dt,state.running,{greeted:state.greeted});
+  const p=player.g.position; if(state.enrolled && p.x>20.4 && p.x<29.6 && p.z>8 && p.z<17 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Explore o laboratório.');} world.update(p,dt,state.running,{greeted:state.greeted});
   if(state.running && !state.dialog){
     let inputX=(Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'))) + moveJoy.x;
     let inputZ=(Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'))) + moveJoy.y;
