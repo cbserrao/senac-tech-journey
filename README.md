@@ -1,15 +1,11 @@
-# Senac Tech Journey v1.3
+# Senac Tech Journey v1.3.1
 
-## Dia 2 — montagem do computador
+## Melhorias no Dia 2 — montagem do computador
 
 Novidades:
-- atividade prática do segundo dia de aula
-- 8 etapas guiadas de montagem do computador
-- visualizador 3D da montagem dentro do gabinete
-- perguntas de múltipla escolha a cada etapa
-- conclusão da prática com liberação do aluno ao final
-
-Mantém:
-- Dia 1 de componentes
-- cenário, luzes, sombras e reflexos
-- navegação por PC e celular
+- encaixe visual mais realista das peças dentro do gabinete
+- áreas destacadas mostrando o local correto de instalação
+- cabos internos da fonte, CPU, SATA e SSD
+- botão de ligar o PC na etapa final
+- feedback visual de acerto/erro no próprio gabinete
+- LEDs e ventoinhas respondem quando o PC é ligado

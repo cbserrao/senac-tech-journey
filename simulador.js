@@ -148,6 +148,7 @@ function componentArt(i){
  return `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:min(245px,32vh);display:block;image-rendering:pixelated" role="img" aria-label="${components[i][0]}"><defs><linearGradient id="metal" x2="1" y2="1"><stop stop-color="#e1e6e9"/><stop offset=".5" stop-color="#a4afb7"/><stop offset="1" stop-color="#687782"/></linearGradient><linearGradient id="darkmetal" x2="1" y2="1"><stop stop-color="#566570"/><stop offset="1" stop-color="#26343f"/></linearGradient></defs><rect x="18" y="5" width="284" height="170" rx="5" fill="#14263a" stroke="#39577a"/><ellipse cx="160" cy="166" rx="100" ry="5" fill="#0a1827" opacity=".6"/>${arts[i]}</svg>`;
 }
 
+
 const assemblySteps=[
  ['Gabinete','Abra e prepare o gabinete, que é a estrutura onde as peças serão montadas.','Qual peça abriga e protege todos os componentes?',['Gabinete','Monitor','Teclado'],0],
  ['Placa-mãe','Instale a placa-mãe usando os pontos de fixação corretos.','Qual peça interliga todos os componentes?',['SSD','Placa-mãe','Fonte'],1],
@@ -159,25 +160,61 @@ const assemblySteps=[
  ['Ligar o PC','Conecte os cabos principais e ligue o computador para testar.','Depois de montar tudo, qual é o próximo passo?',['Ligar e testar','Retirar a RAM','Remover o cooler'],0]
 ];
 let assemblyIndex=0;
-function mountAssemblyViewer(host,step){
+let assemblyFeedback='neutral';
+let assemblyPowered=false;
+function mountAssemblyViewer(host,step,feedback='neutral',powered=false){
  disposePartViewer();
  const sc=new T.Scene();sc.background=new T.Color(0x14263a);const cam=new T.PerspectiveCamera(36,1,.1,100);cam.position.set(0,1.1,7.5);cam.lookAt(0,.3,0);
- const group=new T.Group();sc.add(group);sc.add(new T.HemisphereLight(0xffffff,0x687c98,2.2));const light=new T.DirectionalLight(0xffffff,2.6);light.position.set(3,5,6);sc.add(light);
+ const group=new T.Group();sc.add(group);sc.add(new T.HemisphereLight(0xffffff,0x687c98,2.2));const light=new T.DirectionalLight(0xffffff,2.8);light.position.set(3,5,6);light.castShadow=true;sc.add(light);
  const b=(w,h,d,x,y,z,c)=>box(w,h,d,x,y,z,c,group);
+ const plane=(w,h,x,y,z,c,o=.3,ry=0)=>{const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({color:c,transparent:true,opacity:o,side:T.DoubleSide}));m.position.set(x,y,z);m.rotation.y=ry;group.add(m);return m;};
  const cyl=(r,h,x,y,z,c,rx=Math.PI/2)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r,h,16),surfaceMaterial(c,r*2,h,r*2));m.rotation.x=rx;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
- const fan=(x,y,z,r)=>{cyl(r,.12,x,y,z,0x202a33);for(let j=0;j<7;j++){const a=j*Math.PI*2/7;const m=b(r*.23,r*.58,.07,x+Math.sin(a)*r*.45,y+Math.cos(a)*r*.45,z+.08,0x71808b);m.rotation.z=-a+.35;}cyl(r*.23,.18,x,y,z+.1,0x394956);};
- // case shell
- b(.12,3.2,2.3,-1.18,0,0,0x1b232c); b(2.3,.12,2.3,0,-1.6,0,0x1b232c); b(2.3,.12,2.3,0,1.6,0,0x1b232c);
- b(2.3,3.2,.12,0,0,-1.1,0x394651); b(2.3,3.2,.16,0,0,1.1,0x202a33);
- b(.06,3.0,2.15,1.12,0,0,0x55606b); // open side frame
- if(step>=0){b(.2,.12,.08,.76,1.36,1.18,0x67db9b); fan(0,.6,1.2,.55); fan(0,-.8,1.2,.55);}
- if(step>=1){ b(.08,2.45,1.65,-.78,0,-.05,0x23704e); for(let j=0;j<6;j++) cyl(.07,.14,-.96,0.98-j*.38,-.82,0xaeb9c3,0); }
+ const cable=(pts,color=0x10151d)=>{const curve=new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)));const m=new T.Mesh(new T.TubeGeometry(curve,24,.035,8,false),new T.MeshPhongMaterial({color,shininess:35}));m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
+ const fan=(x,y,z,r,led=0x71808b)=>{cyl(r,.12,x,y,z,0x202a33);for(let j=0;j<7;j++){const a=j*Math.PI*2/7;const m=b(r*.23,r*.58,.07,x+Math.sin(a)*r*.45,y+Math.cos(a)*r*.45,z+.08,led);m.rotation.z=-a+.35;}cyl(r*.23,.18,x,y,z+.1,0x394956);};
+ const glowColor = feedback==='wrong' ? 0xff5757 : feedback==='correct' ? 0x6bff9b : 0xffc857;
+ const glowOpacity = feedback==='wrong' ? .42 : feedback==='correct' ? .36 : .22;
+ const highlight=(w,h,d,x,y,z,ry=0)=>{
+   b(w,h,d,x,y,z,glowColor).material = new T.MeshPhongMaterial({color:glowColor,transparent:true,opacity:.08,emissive:glowColor,emissiveIntensity:.4});
+   plane(w+.02,h+.02,x,y,z+d/2+.02,glowColor,glowOpacity,ry);
+ };
+ // gabinete mais realista: estrutura, painel frontal, lateral aberta e shroud inferior
+ b(.12,3.35,2.35,-1.18,0,0,0x1b232c); b(2.35,.12,2.35,0,-1.64,0,0x1b232c); b(2.35,.12,2.35,0,1.64,0,0x1b232c);
+ b(2.35,3.35,.12,0,0,-1.12,0x3c4b57); b(.08,3.1,2.2,1.12,0,0,0x57646f); b(.18,3.35,2.35,-1.18,0,0,0x0f161d);
+ b(2.35,3.35,.18,0,0,1.13,0x202a33); b(1.8,.18,2.0,.2,-1.2,.05,0x2b3742); // PSU shroud
+ b(.8,.1,.06,.65,1.45,1.24,powered?0x7cff9f:0x5b6b76); b(.16,.16,.08,.22,1.45,1.22,powered?0x8df8a8:0x2f363b); // front LED + power button
+ b(.1,3.15,.04,1.18,0,-.2,0x0e141a); for(let k=0;k<10;k++) b(.02,.18,.02,1.19,-1.1+k*.24,-.2,0x36424c); // front mesh
+ fan(0,.72,1.23,.55,powered?0x78d8ff:0x71808b); fan(0,-.8,1.23,.55,powered?0x8cf2b2:0x71808b); fan(-1.18,0,0,.48,powered?0x8cf2b2:0x71808b); // rear fan
+ // motherboard tray + standoffs
+ b(.06,2.55,1.72,-.82,0.05,-.03,0x1e6147); for(let j=0;j<6;j++) cyl(.06,.12,-.98,0.95-j*.38,-.82,0xaeb9c3,0);
+ if(step===0) highlight(2.2,3.1,.05,-.02,0,1.18,0);
+ if(step>=1){
+   b(.08,2.45,1.65,-.78,0,-.05,0x23704e); for(let j=0;j<12;j++) b(.02,.5,.01,-.95+j*.15,-1.1+.12*j,.02,0x73a67f);
+   b(.16,.24,.22,-1.0,1.06,-.72,0xa8b5bf); b(.16,.24,.22,-1.0,.67,-.72,0xa8b5bf); b(.16,.24,.22,-1.0,.28,-.72,0xa8b5bf); // IO ports
+ }
+ if(step===1) highlight(.12,2.45,1.65,-.78,0,-.05,0);
  if(step>=2){ b(.6,.62,.12,-.64,.56,.04,0xaeb9c3); b(.52,.52,.03,-.64,.56,.12,0xcbd2d7); }
- if(step>=3){ b(1.1,1.1,.12,-.64,.56,.28,0x303b43); fan(-.64,.56,.42,.46); }
+ if(step===2) highlight(.64,.66,.18,-.64,.56,.16,0);
+ if(step>=3){ b(1.06,1.06,.12,-.64,.56,.28,0x303b43); fan(-.64,.56,.42,.45,powered?0x78d8ff:0x748592); }
+ if(step===3) highlight(1.12,1.12,.16,-.64,.56,.42,0);
  if(step>=4){ b(.12,1.28,.18,-.12,.65,.1,0x202a33); b(.03,1.18,.03,-.12,.65,.22,0xd9b45b); b(.12,1.28,.18,.08,.65,.1,0x202a33); b(.03,1.18,.03,.08,.65,.22,0xd9b45b); }
- if(step>=5){ b(.95,.66,.16,.38,-.58,.2,0x222d36); b(.75,.46,.02,.38,-.58,.29,0xcfd7dc); b(.18,.08,.1,-.02,-.87,.14,0x161e25); b(.35,.08,.1,.32,-.87,.14,0x161e25); }
- if(step>=6){ b(.95,.95,1.35,.62,-1.02,-.1,0x485661); fan(.62,-1.02,.62,.34); b(.24,.18,.04,.26,-.66,-.76,0x151b23); }
- if(step>=7){ b(.03,1.3,.03,-.9,.1,.14,0xc53f3b); b(.03,1.15,.03,-.78,.08,.08,0xf1d34f); b(.03,1.45,.03,-.6,-.18,.26,0x67db9b); b(.03,.95,.03,-.02,-.35,.25,0x73a6e8); b(.18,.18,.18,.76,1.36,1.18,0x9ef39f); }
+ if(step===4) highlight(.34,1.32,.24,-.02,.65,.24,0);
+ if(step>=5){ b(.95,.66,.16,.42,-.62,-.06,0x202a33); b(.76,.47,.025,.42,-.62,.04,0xcfd7dc); b(.24,.08,.08,-.02,-.9,.08,0x161e25); b(.42,.08,.08,.34,-.9,.08,0x161e25); }
+ if(step===5) highlight(1.0,.72,.22,.42,-.62,.06,0);
+ if(step>=6){ b(.92,.88,1.24,.64,-1.02,-.2,0x485661); fan(.64,-1.02,.49,.34,powered?0x8cf2b2:0x71808b); b(.24,.18,.04,.26,-.66,-.74,0x151b23);
+   // cabos principais da fonte
+   cable([[.14,-1.02,-.22],[-.15,-.78,-.18],[-.48,-.25,-.15],[-.78,.05,-.02]],0x161b20); // 24pin
+   cable([[.14,-1.02,-.16],[-.05,-.7,-.12],[-.42,.34,-.14],[-.62,.76,.08]],0xf0d34f); // CPU power
+   cable([[.16,-1.02,.02],[.28,-.92,.02],[.36,-.78,.02],[.42,-.62,.08]],0xc53f3b); // SATA power SSD
+ }
+ if(step===6) highlight(.96,.92,1.28,.64,-1.02,-.2,0);
+ if(step>=7){
+   cable([[-.06,-.86,.1],[.15,-.82,.1],[.34,-.76,.1],[.42,-.66,.1]],0x4e89d7); // data SATA
+   cable([[.88,1.44,1.16],[.62,1.44,1.16],[.38,1.44,1.16],[.22,1.45,1.16]],powered?0x8df8a8:0x5b6b76); // power line to button
+ }
+ if(step===7) highlight(.28,.25,.12,.22,1.45,1.22,0);
+ // feedback visual no próprio gabinete
+ if(feedback==='wrong'){ plane(2.32,3.2,0,0,1.25,0xff5757,.12,0); }
+ if(feedback==='correct'){ plane(2.32,3.2,0,0,1.25,0x6bff9b,.09,0); }
  const bounds=new T.Box3().setFromObject(group); const size=bounds.getSize(new T.Vector3()); group.scale.setScalar(3.5/Math.max(size.x,size.y,size.z)); group.rotation.set(-.28,.55,0);
  let r;try{r=new T.WebGLRenderer({antialias:true});}catch(e){host.innerHTML='<div style="padding:12px">Visualização indisponível neste navegador.</div>';return;}
  const cv=r.domElement;cv.style.cssText='width:100%;height:100%;display:block;touch-action:none;cursor:grab';host.append(cv);let zoom=1,drag=null;
@@ -188,24 +225,37 @@ function mountAssemblyViewer(host,step){
  cv.onpointerup=cv.onpointercancel=cv.onlostpointercapture=()=>{drag=null;cv.style.cursor='grab';};
  cv.onwheel=e=>{e.preventDefault();zoom=T.MathUtils.clamp(zoom-e.deltaY*.001,.7,1.7);draw();};
  const bar=host.nextElementSibling;bar.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{const a=btn.dataset.view;if(a==='reset'){group.rotation.set(-.28,.55,0);zoom=1;draw();}else if(a==='plus'||a==='minus'){zoom=T.MathUtils.clamp(zoom+(a==='plus'?.15:-.15),.7,1.7);draw();}else rotate(a==='left'?-.35:a==='right'?.35:0,a==='up'?-.35:a==='down'?.35:0);});
- const ro=new ResizeObserver(draw);ro.observe(host);draw();partViewer={dispose(){ro.disconnect();group.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});r.dispose();r.forceContextLoss();}};
+ const ro=new ResizeObserver(draw);ro.observe(host);draw();partViewer={dispose(){ro.disconnect();group.traverse(o=>{if(o.isMesh){o.geometry.dispose(); if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose();}});r.dispose();r.forceContextLoss();}};
 }
 function startAssembly(){
  if(state.assemblyDone)return;
- assemblyIndex=0;
+ assemblyIndex=0; assemblyFeedback='neutral'; assemblyPowered=false;
  root.querySelector('#tj-mission').previousElementSibling.textContent='MISSÃO 03 — DIA 2';
  showMission('Monte o computador seguindo a ordem correta das peças.');
- const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Hoje você vai montar um computador passo a passo. Observe a bancada e escolha a peça correta para cada etapa.</p><button style="padding:12px">Iniciar montagem</button>');
+ const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Hoje você vai montar um computador passo a passo. Observe o gabinete, veja o local de encaixe destacado e escolha a peça correta para cada etapa.</p><button style="padding:12px">Iniciar montagem</button>');
  d.querySelector('button').onclick=()=>renderAssemblyStep(d);
 }
 function renderAssemblyStep(d){
  disposePartViewer();
  const c=assemblySteps[assemblyIndex];
- d.innerHTML=`<b style="color:#f7941d">DIA 2 · ETAPA ${assemblyIndex+1}/${assemblySteps.length}</b><div class="part-view" style="height:clamp(150px,31vh,280px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste para girar a montagem em 3D.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
- mountAssemblyViewer(d.querySelector('.part-view'),assemblyIndex);
- d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{ const feedback=d.querySelector('.feedback'); if(Number(b.dataset.answer)!==c[4]){feedback.textContent='Ainda não. Pense na ordem lógica da montagem.'; return;} d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true); feedback.textContent='Etapa correta!'; const next=document.createElement('button'); next.textContent=assemblyIndex===assemblySteps.length-1?'Concluir montagem':'Próxima etapa'; next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px'; d.append(next); next.onclick=()=>{ assemblyIndex++; if(assemblyIndex<assemblySteps.length){ renderAssemblyStep(d); return; } disposePartViewer(); state.assemblyDone=true; showMission('Dia 2 concluído! O computador foi montado com sucesso.'); d.innerHTML='<b style="color:#f7941d">DIA 2 CONCLUÍDO</b><p>Parabéns! Você concluiu a montagem básica do computador. Na próxima aula, podemos partir para conexões internas, BIOS e teste final.</p><button style="padding:12px">Encerrar prática</button>'; d.querySelector('button').onclick=()=>{ closeDialog(d); state.satTI=false; player.g.position.set(-23.62,.1,18); player.legs.forEach(l=>l.rotation.x=0); player.arms.forEach(a=>a.rotation.x=0); }; }; });
+ d.innerHTML=`<b style="color:#f7941d">DIA 2 · ETAPA ${assemblyIndex+1}/${assemblySteps.length}</b><div class="part-view" style="height:clamp(150px,31vh,280px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste para girar a montagem em 3D. A área destacada mostra onde a peça deve ser instalada.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
+ const mount=()=>{ const host=d.querySelector('.part-view'); if(!host) return; host.innerHTML=''; mountAssemblyViewer(host,assemblyIndex,assemblyFeedback,assemblyPowered); };
+ mount();
+ d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
+   const feedback=d.querySelector('.feedback');
+   if(Number(b.dataset.answer)!==c[4]){ assemblyFeedback='wrong'; feedback.textContent='Ainda não. Observe a área destacada no gabinete e pense na ordem lógica da montagem.'; mount(); return; }
+   assemblyFeedback='correct'; d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true); feedback.textContent='Etapa correta! A peça foi instalada no local certo.'; mount();
+   if(assemblyIndex===assemblySteps.length-1){
+     const power=document.createElement('button'); power.textContent=assemblyPowered?'PC ligado':'Ligar o PC'; power.style.cssText='padding:12px;background:#0fa968;color:white;border:0;border-radius:6px;margin-right:8px';
+     const finish=document.createElement('button'); finish.textContent='Concluir montagem'; finish.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px'; finish.disabled=!assemblyPowered; finish.style.opacity=assemblyPowered?'1':'.55';
+     d.append(power,finish);
+     power.onclick=()=>{ assemblyPowered=true; assemblyFeedback='correct'; feedback.textContent='Computador ligado com sucesso! LEDs, ventoinhas e conexões responderam corretamente.'; mount(); power.textContent='PC ligado'; power.disabled=true; power.style.opacity='.7'; finish.disabled=false; finish.style.opacity='1'; };
+     finish.onclick=()=>{ disposePartViewer(); state.assemblyDone=true; showMission('Dia 2 concluído! O computador foi montado e testado com sucesso.'); d.innerHTML='<b style="color:#f7941d">DIA 2 CONCLUÍDO</b><p>Parabéns! Você concluiu a montagem do computador, organizou os cabos e testou o botão de energia.</p><button style="padding:12px">Encerrar prática</button>'; d.querySelector('button').onclick=()=>{ closeDialog(d); state.satTI=false; player.g.position.set(-23.62,.1,18); player.legs.forEach(l=>l.rotation.x=0); player.arms.forEach(a=>a.rotation.x=0); }; };
+     return;
+   }
+   const next=document.createElement('button'); next.textContent='Próxima etapa'; next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px'; d.append(next); next.onclick=()=>{ assemblyIndex++; assemblyFeedback='neutral'; if(assemblyIndex<assemblySteps.length){ renderAssemblyStep(d); return; } };
+ });
 }
-
 let partViewer=null;
 function disposePartViewer(){if(!partViewer)return;partViewer.dispose();partViewer=null;}
 function mountPartViewer(host,i){
