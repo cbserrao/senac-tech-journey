@@ -88,8 +88,8 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   box(5.2,.7,.4,0,4.45,26.9,blue); sign('SENAC',0,4.46,27.11,4.4,.72);
 
   // Árvores e paisagismo melhorados
-  [[-7,22,0],[7,22,1],[-9,15,1],[9,15,0],[-10,8,0],[10,8,1],[-39,18,1],[16,18,0]].forEach(v=>tree(v[0],v[1],v[2]));
-  [[-4,24],[4,24],[-12,25],[13,11],[-39,22],[18,22]].forEach(v=>shrub(v[0],v[1],.95));
+  [[-7,22,0],[7,22,1],[-9,15,1],[9,15,0],[-10,8,0],[10,8,1],[16,18,0]].forEach(v=>tree(v[0],v[1],v[2]));
+  [[-4,24],[4,24],[-12,25],[13,11],[18,22]].forEach(v=>shrub(v[0],v[1],.95));
 
   // Guarita/portaria
   tile(4.5,4,-5.9,23,0xe1ddd0);
@@ -161,13 +161,13 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   for(const x of [11.3,14.0]){ box(1.8,.12,1,x,.82,5.2,0xc1a77d); for(const dx of [-.72,.72]) box(.08,.8,.08,x+dx,.4,5.2,gray); box(.7,.45,.14,x,1.12,5.0,dark); addCollider(x,5.2,1.8,1); }
   solid(7,recH,.2,12.6,recH/2,7.2,white); solid(.2,recH,5.3,16.1,recH/2,4.55,white);
   // Corredor da recepção para a cantina e sala de TI, agora no lado esquerdo do atendimento.
-  tile(10,3.4,-14,0); for(const z of [-1.8,1.8]) solid(10,4.5,.18,-14,2.25,z,white);
+  tile(10.4,4.6,-14,0); for(const z of [-2.3,2.3]) solid(10.4,4.5,.18,-14,2.25,z,white);
   // Pátio central e dois caminhos contornando a cantina.
   tile(15,14,-26.5,0,0xded9cf);
   for(let x=-33.5;x<-19;x++) for(let z=-6.5;z<7;z++) box(.97,.018,.97,x,.074,z,(Math.floor(x+z)%2)?0xe5e2d9:0xd9d8cf);
   solid(15,4.5,.2,-26.5,2.25,-7,white);
   // Parede compartilhada com TI construída uma única vez abaixo.
-  for(const z of [-4.4,4.4]) solid(.2,4.5,5.2,-19,2.25,z,white);
+  for(const z of [-4.9,4.9]) solid(.2,4.5,4.2,-19,2.25,z,white);
   solid(.2,4.5,14,-34,2.25,0,white);
   // Cantina central, balcão voltado para a chegada pelo corredor esquerdo.
   tile(5,6,-26,0,0xcbbba4);
@@ -190,21 +190,21 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   for(let x=-34.4;x<-15.3;x++) for(let z=7.6;z<22.7;z++) box(.97,.018,.97,x,.074,z,(Math.floor(x+z)%2)?0xe5e2d9:0xd9d8cf);
   solid(.22,4.9,16,-34.9,2.45,15,white); solid(.22,4.9,16,-15.1,2.45,15,white);
   solid(20,4.9,.22,-25,2.45,23.1,white);
-  solid(8,4.9,.22,-31,2.45,7,white); solid(8,4.9,.22,-19,2.45,7,white);
-  // Porta de correr de 4 metros, encaixada na parede compartilhada.
-  box(4,1.5,.24,-25,4.15,7,white);
+  solid(7.4,4.9,.22,-31.3,2.45,7,white); solid(7.4,4.9,.22,-18.7,2.45,7,white);
+  // Porta de correr de 4,8 metros, encaixada na parede compartilhada.
+  box(4.8,1.5,.24,-25,4.18,7,white);
   for(const x of [-27,-23]) solid(.14,3.4,.28,x,1.7,7,gray);
   box(4,.15,.28,-25,3.4,7,gray);
   const tiLeaves=[];
   for(const side of [-1,1]){
-    const g=new T.Group();scene.add(g);g.position.set(-25+side*.98,0,7);
-    glass(1.94,3.24,.09,0,1.65,0,g);
-    for(const x of [-.96,.96])box(.06,3.3,.12,x,1.65,0,gray,g);
-    for(const y of [.06,3.28])box(1.98,.06,.12,0,y,0,gray,g);
-    box(.07,.38,.14,-side*.25,1.5,0,gray,g);tiLeaves.push(g);
+    const g=new T.Group();scene.add(g);g.position.set(-25+side*1.18,0,6.96);
+    glass(2.3,3.28,.09,0,1.66,0,g);
+    for(const x of [-1.12,1.12])box(.06,3.34,.12,x,1.66,0,gray,g);
+    for(const y of [.06,3.32])box(2.34,.06,.12,0,y,0,gray,g);
+    box(.07,.38,.14,-side*.28,1.5,0,gray,g);tiLeaves.push(g);
   }
-  doorFrames.push({x:-25,z:7,leaves:tiLeaves,open:0,baseX:.98,openDist:1.95,blockHalf:2});
-  const tiSign=sign('SALA DE TI',-25,5.05,7,5.6,.85);tiSign.userData.alwaysVisible=true;
+  doorFrames.push({x:-25,z:6.96,leaves:tiLeaves,open:0,baseX:1.18,openDist:2.2,blockHalf:2.45});
+  const tiSign=sign('SALA DE TI',-25,5.02,6.74,5.8,.88);tiSign.rotation.y=Math.PI;tiSign.userData.alwaysVisible=true;
   const tiSpots=[];
   for(const x of [-31.2,-27.5,-23.8,-20.1,-16.9]) for(const z of [11.1,15.5]) {
     tiSpots.push({x,z});
@@ -228,8 +228,8 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     deskRight:{x:5.2,z:-3.25},
     lobby:{x:0,z:0},
     corridorEntry:{x:-9.6,z:0},
-    patio:{x:-21,z:0},
-    tiDoor:{x:-25,z:7},
+    patio:{x:-22.2,z:0},
+    tiDoor:{x:-25,z:6.96},
     tiSeat:{x:-23.62,z:16.62}
   };
 
@@ -253,8 +253,8 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   // Visão por cômodo: geometria visual separada das colisões.
   const regions={
     reception:{minX:-9.25,maxX:9.25,minZ:-8.25,maxZ:8.25},
-    corridor:{minX:-19.1,maxX:-9.25,minZ:-1.95,maxZ:1.95},
-    patio:{minX:-34.2,maxX:-19.1,minZ:-7.2,maxZ:7.2},
+    corridor:{minX:-19.3,maxX:-9.25,minZ:-2.35,maxZ:2.35},
+    patio:{minX:-34.2,maxX:-19.0,minZ:-7.2,maxZ:7.2},
     ti:{minX:-35.2,maxX:-14.8,minZ:7.2,maxZ:23.3},
     side:{minX:9.25,maxX:16.3,minZ:1.95,maxZ:7.4}
   };

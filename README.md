@@ -1,9 +1,7 @@
-# Senac Tech Journey v1.2
-
-Dia 1: professor virtual, bancada, apresentação ilustrada de sete componentes e perguntas com feedback. Montagem prática prevista para a próxima etapa. Cenário v1.1.1 preservado.
-
-## v1.2.1
-Ilustrações vetoriais de hardware redesenhadas com detalhes de conectores, circuitos, ventoinhas e acabamento. Cenário e lógica da aula preservados.
-
-## v1.2.2
-Visualizador Three.js com sete modelos procedurais, rotação por toque/mouse, zoom e restauração.
+# Senac Tech Journey v1.2.3
+Correções de cenário e navegação:
+- corredor lateral desbloqueado e ampliado
+- entrada da sala de TI reconstruída com porta dupla maior
+- placa "SALA DE TI" sempre visível e voltada para o jogador
+- remoção da vegetação que aparecia dentro do laboratório
+- ajuste fino das aberturas e do caminho até a TI
