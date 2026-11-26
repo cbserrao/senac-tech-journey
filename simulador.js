@@ -64,7 +64,8 @@ const guideArrow=floatingArrow();
 const receptionNpcs=[npc,npc2], patioNpcs=[canteenNpc1,canteenNpc2,tableNpc1,tableNpc2], outsideNpcs=[doorman];
 
 
-const state={running:false, dialog:false, greeted:false, enrolled:false, arrivedTI:false, satTI:false, studentName:'', camDist:8.2};
+const professor=detailedPerson(-22.5,20.8,{shirt:0x174e80,accent:0xf7941d,badge:true,hair:0x352820}); professor.g.rotation.y=Math.PI;
+const state={running:false, dialog:false, greeted:false, enrolled:false, arrivedTI:false, satTI:false, lessonDone:false, studentName:'', camDist:8.2};
 const keys=new Set(); let last=performance.now(), walk=0;
 let moveJoy={x:0,y:0,active:false};
 const mobile = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -100,18 +101,58 @@ function showMission(text){ root.querySelector('#tj-mission').textContent=text; 
 function createDialog(title, html){ state.dialog=true; keys.clear(); resetJoys(); const d=document.createElement('div'); d.style.cssText='position:absolute;left:10%;right:10%;bottom:8%;background:#102849;border:3px solid #f7941d;border-radius:10px;padding:20px;max-height:70%;overflow:auto;z-index:10'; d.innerHTML='<b style="color:#f7941d">'+title+'</b>'+html; root.append(d); return d; }
 function closeDialog(d){ if(d&&d.remove) d.remove(); state.dialog=false; }
 function near(pos,dist){ return Math.hypot(player.g.position.x-pos.x, player.g.position.z-pos.z) < dist; }
+
+const components=[
+ ['Placa-mãe','Conecta os componentes e permite a comunicação entre eles.','Qual peça interliga os componentes?',['Fonte','Placa-mãe','SSD'],1],
+ ['Processador (CPU)','Executa instruções e realiza operações de processamento.','Qual peça executa as instruções?',['CPU','Gabinete','Cooler'],0],
+ ['Memória RAM','Armazena temporariamente os dados em uso; perde o conteúdo ao desligar.','Qual memória é volátil?',['SSD','HD','RAM'],2],
+ ['SSD','Armazena arquivos e programas de forma permanente, usando memória flash.','Qual peça armazena arquivos mesmo sem energia?',['SSD','RAM','Cooler'],0],
+ ['Fonte de alimentação','Converte a energia elétrica e fornece as tensões necessárias aos componentes.','Qual peça alimenta os componentes?',['CPU','Fonte','Monitor'],1],
+ ['Cooler','Ajuda a dissipar o calor do processador.','Qual peça ajuda a resfriar a CPU?',['RAM','SSD','Cooler'],2],
+ ['Gabinete','Abriga e protege os componentes, permitindo ventilação e organização.','Onde os componentes são instalados?',['Gabinete','Teclado','Monitor'],0]
+];
+let lessonIndex=0;
+function componentArt(i){
+ const base='<svg viewBox="0 0 220 125" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:150px;display:block;image-rendering:pixelated" shape-rendering="crispEdges">';
+ const art=[
+ '<rect x="45" y="8" width="130" height="108" fill="#387b60"/><rect x="72" y="26" width="48" height="45" fill="#c4c9ce"/><rect x="78" y="32" width="36" height="33" fill="#777f89"/><rect x="133" y="18" width="8" height="70" fill="#e9d16e"/><rect x="147" y="18" width="8" height="70" fill="#e9d16e"/><path d="M52 89H123M52 101H123" stroke="#202b38" stroke-width="7"/><path d="M53 20H66V79H130" fill="none" stroke="#a6c083" stroke-width="3"/>',
+ '<rect x="64" y="16" width="92" height="92" fill="#437d65"/><rect x="75" y="27" width="70" height="70" fill="#aebbc6"/><rect x="82" y="34" width="56" height="56" fill="#dce3e7"/><text x="110" y="68" text-anchor="middle" font-size="20" fill="#34465b">CPU</text>',
+ '<rect x="18" y="39" width="184" height="46" fill="#347b51"/><path d="M24 84H196" stroke="#e3bb55" stroke-width="8"/>'+Array.from({length:8},(_,k)=>`<rect x="${27+k*21}" y="48" width="16" height="24" fill="#17242f"/>`).join(''),
+ '<rect x="38" y="20" width="144" height="86" rx="5" fill="#3d4958"/><rect x="49" y="32" width="122" height="55" fill="#73869a"/><text x="110" y="65" text-anchor="middle" font-size="24" fill="white">SSD</text><rect x="63" y="98" width="32" height="8" fill="#d8b14e"/>',
+ '<rect x="45" y="18" width="130" height="90" fill="#455361"/><circle cx="95" cy="62" r="34" fill="#162431" stroke="#a5b0bb" stroke-width="5"/><path d="M65 62H125M95 32V92M73 40L117 84M73 84L117 40" stroke="#8795a0" stroke-width="4"/><rect x="145" y="48" width="18" height="20" fill="#151e28"/>',
+ '<rect x="63" y="12" width="94" height="101" fill="#536575"/><circle cx="110" cy="62" r="42" fill="#172635"/><path d="M110 55L90 23L121 27L117 57L150 45L145 76L117 69L125 102L94 97L103 69L73 80L75 48Z" fill="#a3b6c5"/><circle cx="110" cy="62" r="12" fill="#526676"/>',
+ '<rect x="66" y="8" width="88" height="109" fill="#233344"/><rect x="73" y="15" width="74" height="94" fill="#44566a"/><rect x="80" y="23" width="60" height="15" fill="#15202b"/><circle cx="110" cy="48" r="5" fill="#6be2a0"/><path d="M83 70H137M83 80H137M83 90H137" stroke="#172635" stroke-width="5"/>'
+ ];return base+art[i]+'</svg>';
+}
+function startLesson(){
+ if(state.lessonDone)return;
+ root.querySelector('#tj-mission').previousElementSibling.textContent='MISSÃO 02 — DIA 1';
+ showMission('Conheça os componentes do computador.');
+ const d=createDialog('PROFESSOR DE TI','<p>Bem-vindo à primeira aula! Hoje vamos conhecer as peças do computador e suas funções.</p><button style="padding:12px">Começar aula</button>');
+ d.querySelector('button').onclick=()=>renderComponent(d);
+}
+function renderComponent(d){
+ const c=components[lessonIndex];
+ d.innerHTML=`<b style="color:#f7941d">DIA 1 · COMPONENTE ${lessonIndex+1}/${components.length}</b>${componentArt(lessonIndex)}<h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
+ d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
+ const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){feedback.textContent='Tente novamente. Leia a função da peça.';return;}
+ d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}state.lessonDone=true;showMission('Dia 1 concluído! Você já conhece os principais componentes.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. Na próxima aula, vamos montar o computador.</p><button style="padding:12px">Encerrar aula</button>';d.querySelector('button').onclick=()=>{closeDialog(d);state.satTI=false;player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);};};
+ });
+}
+
 function interact(){
   if(!state.running||state.dialog) return;
+  if(state.satTI){if(!state.lessonDone)startLesson();return;}
   if(near(world.marks.doorman,2.2) && !state.greeted){
     const d=createDialog('PORTEIRO','<p>Bom dia! Seja bem-vindo ao Senac. Posso liberar sua entrada.</p><p><button id="gd" style="padding:12px">Bom dia!</button></p>');
     d.querySelector('#gd').onclick=()=>{ state.greeted=true; d.innerHTML='<b style="color:#f7941d">PORTEIRO</b><p>Perfeito! Entrada liberada. Siga pelo corredor até o atendimento para realizar sua matrícula.</p><p><button id="ok" style="padding:12px">Continuar</button></p>'; showMission('Entre no prédio, vá ao atendimento e realize sua matrícula.'); d.querySelector('#ok').onclick=()=>closeDialog(d); };
     return;
   }
-  if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0)){
-    state.satTI=true; player.g.position.set(world.marks.tiSeat.x,.1,world.marks.tiSeat.z); player.g.rotation.y=Math.PI;
+  if(state.arrivedTI && !state.satTI && !state.lessonDone && near(world.marks.tiSeat,2.0)){
+    state.satTI=true; player.g.position.set(world.marks.tiSeat.x,-.25,world.marks.tiSeat.z); player.g.rotation.y=Math.PI; player.legs.forEach(l=>l.rotation.x=-Math.PI/2); player.arms.forEach(a=>a.rotation.x=-.65);
     const d=createDialog('SALA DE TI','<p>Muito bem! Você encontrou sua bancada e sentou para iniciar a aula prática.</p><p><button id="sitok" style="padding:12px">Continuar</button></p>');
     showMission('Perfeito! Você já está na bancada. Agora vamos iniciar a aula de componentes do computador.');
-    d.querySelector('#sitok').onclick=()=>closeDialog(d);
+    d.querySelector('#sitok').onclick=()=>{closeDialog(d);startLesson();};
     return;
   }
   if(near(world.marks.deskLeft,2.9) || near(world.marks.deskRight,2.9)){
@@ -120,7 +161,7 @@ function interact(){
     d.querySelector('#mat').onclick=()=>{
       d.innerHTML='<b style="color:#f7941d">MATRÍCULA</b><form id="f"><p>Informe seu nome:</p><input id="name" required maxlength="60" minlength="2" style="font-size:16px;padding:10px;width:85%" placeholder="Nome do aluno"><p><button style="padding:10px">Confirmar matrícula</button></p></form>';
       const f=d.querySelector('#f'), input=d.querySelector('#name'); input.focus();
-      f.onsubmit=e=>{ e.preventDefault(); const name=input.value.trim(); if(name.length<2) return; state.studentName=name; state.enrolled=true; d.innerHTML='<b style="color:#f7941d">MATRÍCULA CONCLUÍDA</b><p>Bem-vindo, '+name+'! Sua matrícula simulada foi concluída. Siga pelo corredor à esquerda da recepção, no lado do bebedouro. Passe pela cantina e encontre a sala de TI.</p><p><button id="cont" style="padding:12px">Continuar</button></p>'; showMission('Matrícula concluída! Siga à esquerda, no lado do bebedouro, passe pela cantina e encontre a sala de TI.'); d.querySelector('#cont').onclick=()=>closeDialog(d); };
+      f.onsubmit=e=>{ e.preventDefault(); const name=input.value.trim(); if(name.length<2) return; state.studentName=name; state.enrolled=true; d.innerHTML='<b style="color:#f7941d">MATRÍCULA CONCLUÍDA</b><p>Bem-vindo, '+name.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))+'! Sua matrícula simulada foi concluída. Siga pelo corredor à esquerda da recepção, no lado do bebedouro. Passe pela cantina e encontre a sala de TI.</p><p><button id="cont" style="padding:12px">Continuar</button></p>'; showMission('Matrícula concluída! Siga à esquerda, no lado do bebedouro, passe pela cantina e encontre a sala de TI.'); d.querySelector('#cont').onclick=()=>closeDialog(d); };
     };
     return;
   }
@@ -136,7 +177,7 @@ function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min((now-last)/1000,.05); last=now;
   const p=player.g.position; if(state.enrolled && p.x>-34.6 && p.x<-15.4 && p.z>8 && p.z<22.5 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Vá até a mesa destacada e pressione E para sentar.');} world.update(p,dt,state.running,{greeted:state.greeted});
-  if(state.running && !state.dialog){
+  if(state.running && !state.dialog && !state.satTI){
     let inputX=(Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'))) + moveJoy.x;
     let inputZ=(Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'))) + moveJoy.y;
     const n=Math.hypot(inputX,inputZ);
@@ -157,7 +198,7 @@ function frame(now){
     }
     if(!state.greeted && near(world.marks.doorman,2.3)) hint.textContent=(mobile?'OK: falar com o porteiro':'Pressione E para falar com o porteiro');
     else if(state.greeted && !state.enrolled && (near(world.marks.deskLeft,2.9)||near(world.marks.deskRight,2.9))) hint.textContent=(mobile?'OK: falar no atendimento':'Pressione E para falar no atendimento');
-    else if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?'OK: sentar na bancada':'Pressione E para sentar na bancada');
+    else if(state.arrivedTI && !state.satTI && !state.lessonDone && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?'OK: sentar na bancada':'Pressione E para sentar na bancada');
     else hint.textContent=(mobile?'Joystick: andar · OK: interagir':'WASD / setas: andar · E: interagir');
   }
   const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x<=-9.25&&p.x>=-35.2&&p.z>=-7.2&&p.z<=23.3)||(p.x>=9.25&&p.x<=16.3&&p.z>=1.95&&p.z<=7.4));
@@ -168,9 +209,9 @@ function frame(now){
   const zone=world.applyView(p,state.running,camera);
   for(const n of outsideNpcs) n.g.visible = (zone==='outside');
   for(const n of receptionNpcs) n.g.visible = (zone==='reception');
-  for(const n of patioNpcs) n.g.visible = (zone==='patio');
+  for(const n of patioNpcs) n.g.visible = (zone==='patio'); professor.g.visible=zone==='ti';
   let guideTarget=null;
-  if(state.running && state.enrolled && !state.satTI){
+  if(state.running && state.enrolled && !state.satTI && !state.lessonDone){
     if(!state.arrivedTI){
       if(p.x>-9.5) guideTarget=world.marks.corridorEntry;
       else if(p.x>-19.5) guideTarget=world.marks.patio;
