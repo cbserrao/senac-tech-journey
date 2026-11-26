@@ -135,7 +135,7 @@ window.addEventListener('resize',resize); if(window.ResizeObserver)new ResizeObs
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min((now-last)/1000,.05); last=now;
-  const p=player.g.position; if(state.enrolled && p.x>-35.0 && p.x<-15.0 && p.z>8 && p.z<22.5 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Vá até a mesa destacada e pressione E para sentar.');} world.update(p,dt,state.running,{greeted:state.greeted});
+  const p=player.g.position; if(state.enrolled && p.x>-34.6 && p.x<-15.4 && p.z>8 && p.z<22.5 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Vá até a mesa destacada e pressione E para sentar.');} world.update(p,dt,state.running,{greeted:state.greeted});
   if(state.running && !state.dialog){
     let inputX=(Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'))) + moveJoy.x;
     let inputZ=(Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'))) + moveJoy.y;
@@ -174,6 +174,7 @@ function frame(now){
     if(!state.arrivedTI){
       if(p.x>-9.5) guideTarget=world.marks.corridorEntry;
       else if(p.x>-19.5) guideTarget=world.marks.patio;
+      else if(p.z<4.5) guideTarget={x:-21,z:5};
       else guideTarget=world.marks.tiDoor;
     } else {
       guideTarget=world.marks.tiSeat;
