@@ -130,6 +130,35 @@ function componentArt(i){
  const arts=[board,cpu,ram,ssd,psu,cooler,caseArt];
  return `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:min(245px,32vh);display:block;image-rendering:pixelated" role="img" aria-label="${components[i][0]}"><defs><linearGradient id="metal" x2="1" y2="1"><stop stop-color="#e1e6e9"/><stop offset=".5" stop-color="#a4afb7"/><stop offset="1" stop-color="#687782"/></linearGradient><linearGradient id="darkmetal" x2="1" y2="1"><stop stop-color="#566570"/><stop offset="1" stop-color="#26343f"/></linearGradient></defs><rect x="18" y="5" width="284" height="170" rx="5" fill="#14263a" stroke="#39577a"/><ellipse cx="160" cy="166" rx="100" ry="5" fill="#0a1827" opacity=".6"/>${arts[i]}</svg>`;
 }
+let partViewer=null;
+function disposePartViewer(){if(!partViewer)return;partViewer.dispose();partViewer=null;}
+function mountPartViewer(host,i){
+ const sc=new T.Scene();sc.background=new T.Color(0x14263a);const cam=new T.PerspectiveCamera(38,1,.1,100);cam.position.set(0,0,7);cam.lookAt(0,0,0);
+ const group=new T.Group();sc.add(group);sc.add(new T.HemisphereLight(0xffffff,0x687c98,2.2));const light=new T.DirectionalLight(0xffffff,2.6);light.position.set(3,5,6);sc.add(light);
+ const b=(w,h,d,x,y,z,c)=>box(w,h,d,x,y,z,c,group);
+ const cyl=(r,h,x,y,z,c)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r,h,16),new T.MeshLambertMaterial({color:c}));m.rotation.x=Math.PI/2;m.position.set(x,y,z);group.add(m);return m;};
+ const metal=0xaeb9c3,black=0x202a33,green=0x23704e,gold=0xd9b45b;
+ function fan(x,y,z,r){cyl(r,.12,x,y,z,black);for(let j=0;j<7;j++){const a=j*Math.PI*2/7;const m=b(r*.27,r*.62,.08,x+Math.sin(a)*r*.48,y+Math.cos(a)*r*.48,z+.08,0x71808b);m.rotation.z=-a+.35;}cyl(r*.25,.18,x,y,z+.1,0x394956);}
+ switch(i){
+ case 0:b(2.7,3.2,.09,0,0,0,green);b(.9,.95,.12,-.45,.55,.1,metal);b(.68,.7,.04,-.45,.55,.19,black);for(let j=0;j<4;j++){b(.12,1.65,.18,.45+j*.18,.65,.12,black);b(.035,1.45,.035,.45+j*.18,.65,.23,gold);}for(let j=0;j<3;j++)b(1.65,.13,.18,-.25,-.45-j*.37,.12,j===0?0xe0e4e7:black);for(let j=0;j<10;j++){cyl(.075,.13,-1.15+(j%2)*.2,.1+Math.floor(j/2)*.24,.15,metal);}for(let j=0;j<5;j++)b(.36,.24,.35,-1.18,1.26-j*.35,.2,metal);b(.24,.7,.2,1.18,-.35,.12,black);for(let j=0;j<12;j++)b(.025,.55,.012,-.95+j*.17,-1.23,.052,0x71a67b);break;
+ case 1:b(2.15,2.15,.12,0,0,0,green);b(1.82,1.82,.22,0,0,.16,metal);b(1.55,1.55,.035,0,0,.29,0xcbd2d7);for(let x=0;x<14;x++)for(let y=0;y<14;y++)if(x<4||x>9||y<4||y>9)b(.085,.085,.025,-.91+x*.14,-.91+y*.14,-.07,gold);break;
+ case 2:b(3.5,1.05,.1,0,0,0,green);for(let j=0;j<8;j++){b(.32,.48,.13,-1.48+j*.42,.1,.12,black);b(.32,.48,.13,-1.48+j*.42,.1,-.12,black);}for(let j=0;j<42;j++)if(j!==23&&j!==24)b(.055,.23,.025,-1.64+j*.08,-.43,.065,gold);break;
+ case 3:b(2.8,1.95,.25,0,0,0,black);b(2.45,1.55,.025,0,0,.14,metal);b(1.8,.62,.03,0,.15,.16,0x536b85);b(.65,.15,.15,-.65,-.95,0,black);b(1.02,.15,.15,.5,-.95,0,black);for(let j=0;j<15;j++)b(.045,.12,.035,-.98+j*.13,-.99,.09,gold);break;
+ case 4:b(2.6,2,1.65,0,0,0,0x485661);fan(0,0,.85,.78);for(let j=0;j<9;j++)b(1.5,.035,.04,0,-.72+j*.18,.99,metal);b(.6,.45,.08,-.7,.55,-.86,black);b(.27,.35,.08,.55,.55,-.86,0x151b23);for(let j=0;j<5;j++)b(1.6,.08,.02,0,-.65+j*.2,-.84,0x242e36);break;
+ case 5:b(2.2,2.2,.4,0,0,-.48,metal);for(let j=0;j<14;j++)b(.065,2.1,.85,-1.02+j*.155,0,-.12,metal);b(2.15,2.15,.16,0,0,.4,black);fan(0,0,.52,.91);for(const x of [-.92,.92])for(const y of [-.92,.92])cyl(.07,.05,x,y,.53,metal);break;
+ case 6:b(.12,3.3,2.1,-1,0,0,black);b(2.1,.12,2.1,0,-1.6,0,black);b(2.1,.12,2.1,0,1.6,0,black);b(2.1,3.3,.12,0,0,-1,0x394651);b(2.1,3.3,.16,0,0,1,black);fan(0,.55,1.12,.65);fan(0,-.87,1.12,.65);b(.18,.12,.08,.7,1.36,1.12,0x67db9b);b(.08,2.3,1.6,-.78,0,-.05,green);b(.16,.65,.65,-.66,.45,.1,metal);b(.25,.7,1.65,-.66,-.65,0,black);break;
+ }
+ const bounds=new T.Box3().setFromObject(group);const size=bounds.getSize(new T.Vector3());group.scale.setScalar(3.2/Math.max(size.x,size.y,size.z));group.rotation.set(-.28,.42,0);
+ let r;try{r=new T.WebGLRenderer({antialias:true});}catch(e){host.innerHTML=componentArt(i);return;}
+ const cv=r.domElement;cv.style.cssText='width:100%;height:100%;display:block;touch-action:none;cursor:grab';host.append(cv);let zoom=1,drag=null;
+ const draw=()=>{const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;cam.aspect=w/h;cam.position.z=7/zoom;cam.updateProjectionMatrix();r.setSize(w,h,false);r.render(sc,cam);};
+ const rotate=(x,y)=>{group.rotateOnWorldAxis(new T.Vector3(0,1,0),x);group.rotateOnWorldAxis(new T.Vector3(1,0,0),y);draw();};
+ cv.onpointerdown=e=>{drag={id:e.pointerId,x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);};cv.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;rotate((e.clientX-drag.x)*.012,(e.clientY-drag.y)*.012);drag.x=e.clientX;drag.y=e.clientY;};cv.onpointerup=cv.onpointercancel=cv.onlostpointercapture=()=>{drag=null;};
+ cv.onwheel=e=>{e.preventDefault();zoom=T.MathUtils.clamp(zoom-e.deltaY*.001, .7,1.65);draw();};
+ const bar=host.nextElementSibling;bar.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{const a=btn.dataset.view;if(a==='reset'){group.rotation.set(-.28,.42,0);zoom=1;draw();}else if(a==='plus'||a==='minus'){zoom=T.MathUtils.clamp(zoom+(a==='plus'?.15:-.15),.7,1.65);draw();}else rotate(a==='left'?-.35:a==='right'?.35:0,a==='up'?-.35:a==='down'?.35:0);});
+ const ro=new ResizeObserver(draw);ro.observe(host);draw();partViewer={dispose(){ro.disconnect();group.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});r.dispose();r.forceContextLoss();}};
+}
+
 function startLesson(){
  if(state.lessonDone)return;
  root.querySelector('#tj-mission').previousElementSibling.textContent='MISSÃO 02 — DIA 1';
@@ -138,11 +167,13 @@ function startLesson(){
  d.querySelector('button').onclick=()=>renderComponent(d);
 }
 function renderComponent(d){
+ disposePartViewer();
  const c=components[lessonIndex];
- d.innerHTML=`<b style="color:#f7941d">DIA 1 · COMPONENTE ${lessonIndex+1}/${components.length}</b>${componentArt(lessonIndex)}<h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
+ d.innerHTML=`<b style="color:#f7941d">DIA 1 · COMPONENTE ${lessonIndex+1}/${components.length}</b><div class="part-view" style="height:clamp(140px,30vh,270px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste a peça para girar em 3D. Use + e − para aproximar.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
+ mountPartViewer(d.querySelector(".part-view"),lessonIndex);
  d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
  const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){feedback.textContent='Tente novamente. Leia a função da peça.';return;}
- d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}state.lessonDone=true;showMission('Dia 1 concluído! Você já conhece os principais componentes.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. Na próxima aula, vamos montar o computador.</p><button style="padding:12px">Encerrar aula</button>';d.querySelector('button').onclick=()=>{closeDialog(d);state.satTI=false;player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);};};
+ d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;showMission('Dia 1 concluído! Você já conhece os principais componentes.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. Na próxima aula, vamos montar o computador.</p><button style="padding:12px">Encerrar aula</button>';d.querySelector('button').onclick=()=>{closeDialog(d);state.satTI=false;player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);};};
  });
 }
 

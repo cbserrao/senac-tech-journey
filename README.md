@@ -4,3 +4,6 @@ Dia 1: professor virtual, bancada, apresentação ilustrada de sete componentes 
 
 ## v1.2.1
 Ilustrações vetoriais de hardware redesenhadas com detalhes de conectores, circuitos, ventoinhas e acabamento. Cenário e lógica da aula preservados.
+
+## v1.2.2
+Visualizador Three.js com sete modelos procedurais, rotação por toque/mouse, zoom e restauração.
