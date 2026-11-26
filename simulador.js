@@ -6,7 +6,7 @@ document.body.append(root);
 const scene=new T.Scene(); scene.background=new T.Color(0x9ec9ed); scene.fog=new T.Fog(0x9ec9ed,45,95);
 const camera=new T.PerspectiveCamera(48,1,.1,140), renderer=new T.WebGLRenderer({antialias:false});
 renderer.domElement.style.cssText='width:100%;height:100%;image-rendering:pixelated;display:block'; root.append(renderer.domElement);
-scene.add(new T.HemisphereLight(0xffffff,0x778599,2)); const sun=new T.DirectionalLight(0xffefd2,2.15); sun.position.set(-10,16,12); scene.add(sun);
+const ambient=new T.HemisphereLight(0xffffff,0x778599,2); scene.add(ambient); const sun=new T.DirectionalLight(0xffefd2,2.15); sun.position.set(-10,16,12); scene.add(sun);
 function box(w,h,d,x,y,z,c,parent=scene){const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshLambertMaterial({color:c})); m.position.set(x,y,z); parent.add(m); return m; }
 const walls=[];
 function sign(txt,x,y,z,w,h){const c=document.createElement('canvas'); c.width=512; c.height=128; const ctx=c.getContext('2d'); ctx.fillStyle='#07529b'; ctx.fillRect(0,0,512,128); ctx.fillStyle='#fff'; ctx.font='bold 70px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,256,64); const tex=new T.CanvasTexture(c); tex.magFilter=T.NearestFilter; const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex,transparent:true})); m.position.set(x,y,z); scene.add(m); return m; }
@@ -244,6 +244,7 @@ function frame(now){
   camera.position.lerp(target,1-Math.exp(-dt*6));
   camera.lookAt(state.running?p.x:0, state.running?1.6:2.5, state.running?p.z:14);
   const zone=world.applyView(p,state.running,camera);
+  const inside=zone!=='outside'; ambient.intensity=T.MathUtils.lerp(ambient.intensity,inside?1.3:2,1-Math.exp(-dt*5)); sun.intensity=T.MathUtils.lerp(sun.intensity,inside?.45:2.15,1-Math.exp(-dt*5));
   for(const n of outsideNpcs) n.g.visible = (zone==='outside');
   for(const n of receptionNpcs) n.g.visible = (zone==='reception');
   for(const n of patioNpcs) n.g.visible = (zone==='patio'); professor.g.visible=zone==='ti';

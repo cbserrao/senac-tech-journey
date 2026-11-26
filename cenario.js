@@ -2,6 +2,14 @@
 window.criarCenarioTech = function(T, scene, box, walls, sign){
   const blue=0x07529b, orange=0xf7941d, white=0xe7e5df, gray=0x9ea5ab, dark=0x263747;
   const doorFrames=[];
+  const localLights=[];
+  function lamp(x,y,z,zone,warm=false,kind="panel"){
+    const fixture=box(kind==="panel"?1.5:.55,.13,kind==="panel"?.55:.55,x,y,z,0x39495a);
+    const lens=box(kind==="panel"?1.38:.46,.045,kind==="panel"?.43:.46,x,y-.09,z,0xffffff);
+    lens.material=new T.MeshBasicMaterial({color:warm?0xffe4ad:0xe5f5ff});
+    fixture.userData.lightFixture=lens.userData.lightFixture=zone;
+    const l=new T.PointLight(warm?0xffd6a0:0xe2efff,0,12,2); l.position.set(x,y-.32,z); scene.add(l); localLights.push({l,zone,power:warm?32:38});
+  }
   const gate={open:0, leaves:[]};
 
   function addCollider(x,z,w,d){ walls.push({x,z,w,d}); }
@@ -183,6 +191,35 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   box(.9,.8,.62,-26.45,.42,.55,0xcfd7dc); box(.6,.07,.44,-26.45,.84,.55,0x8aa5b3); box(.12,.15,.12,-26.73,.94,.55,0xe7f4fb);
   box(.68,.52,.48,-26.85,1.48,-.25,0x434a52); box(.5,.26,.42,-26.85,1.49,-.23,0x1c2329);
   for(const z of [-1.5,-.5,.5,1.5]){ box(.17,.34,.17,-23.5,1.38,z,0xd9e1e5); box(.19,.02,.19,-23.5,1.56,z,0xc33a39); }
+  // Cantina: acabamento em madeira e azulejos, vitrine e equipamentos.
+  box(.055,.83,5.45,-23.085,.53,0,0xb67d48);
+  for(let j=0;j<19;j++)box(.06,.78,.035,-23.05,.53,-2.6+j*.29,0x805735);
+  box(.065,.12,5.6,-23.045,.13,0,0x293d49);
+  for(const z of [-2.9,2.9]){
+    box(4.8,1.7,.045,-26,1.65,z,0xe4e9e5);
+    for(let j=0;j<9;j++)box(.018,1.7,.05,-28.25+j*.55,1.65,z,0xb9c7c7);
+    for(let j=0;j<4;j++)box(4.8,.018,.05,-26,.86+j*.51,z,0xb9c7c7);
+  }
+  // Geladeira: duas portas, puxadores e borracha de vedação.
+  box(.045,1.24,.78,-26.7,.68,-1.9,0xdce4e8);box(.045,.46,.78,-26.7,1.54,-1.9,0xc1ccd3);
+  box(.075,.032,.82,-26.67,1.31,-1.9,0x5c6d79);
+  for(const y of [1.0,1.59])box(.12,.22,.055,-26.62,y,-1.61,0x4c5c68);
+  // Fogão, forno e botões.
+  box(.06,.45,.55,-26.08,.53,1.95,0x313d45);
+  box(.07,.035,.42,-26.03,.76,1.95,0xaab7c0);
+  for(let j=0;j<4;j++)box(.07,.09,.08,-26.03,.88,1.72+j*.15,0x35434b);
+  // Pia, torneira e utensílios.
+  box(.045,.18,.05,-26.7,1.03,.43,gray);box(.28,.045,.05,-26.57,1.12,.43,gray);
+  for(let j=0;j<3;j++)box(.045,.26,.05,-28.3,1.45,-.5+j*.26,0xaab7c0);
+  // Prateleiras altas com caixas e copos, dentro do balcão.
+  for(const y of [2.0,2.65]) {box(.45,.09,2.5,-28.18,y,.35,0xa77d56);for(let j=0;j<5;j++)box(.24,.28,.25,-28.15,y+.18,-.55+j*.43,[0xeab56c,0x8ebbc3,0xf0e5cb][j%3]);}
+  // Menu voltado para a área de atendimento.
+  const menu=sign('LANCHES  •  SUCOS  •  CAFÉ',-23.2,3.02,0,4.6,.62);menu.rotation.y=Math.PI/2;menu.material.side=T.DoubleSide;
+  // Vitrine com vidro, molduras e bandejas de alimentos.
+  for(const z of [-1.1,1.1])box(.5,.66,.045,-23.3,1.58,z,0xb2c5d0).material=new T.MeshPhongMaterial({color:0xb8dce8,transparent:true,opacity:.25,depthWrite:false});
+  box(.48,.045,2.25,-23.3,1.92,0,0x93a8b3);
+  for(const z of [-.7,0,.7]){box(.43,.025,.54,-23.4,1.27,z,0xe1e5e7);box(.26,.12,.3,-23.4,1.35,z,0xc68a42);}
+
   // Duas mesas redondas no pátio, com circulação nos lados.
   for(const z of [-4.8,4.8]){const m=new T.Mesh(new T.CylinderGeometry(.75,.75,.12,12),new T.MeshLambertMaterial({color:0xc5a67d}));m.position.set(-30.4,.87,z);scene.add(m);box(.18,.8,.18,-30.4,.4,z,gray);addCollider(-30.4,z,1.5,1.5);chair(-31.8,z); box(.16,.28,.16,-30.2,1.08,z-.1,0xd9e1e5); box(.18,.02,.18,-30.2,1.22,z-.1,0xc53f3b); box(.32,.08,.28,-30.58,1.0,z+.15,0xe8bb73); box(.26,.12,.22,-30.58,1.08,z+.15,0x7d4c28); box(.32,.05,.28,-30.58,1.15,z+.15,0xe8bb73);}
   // Sala de TI ampliada com 10 bancadas.
@@ -190,11 +227,13 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   for(let x=-34.4;x<-15.3;x++) for(let z=7.6;z<22.7;z++) box(.97,.018,.97,x,.074,z,(Math.floor(x+z)%2)?0xe5e2d9:0xd9d8cf);
   solid(.22,4.9,16,-34.9,2.45,15,white); solid(.22,4.9,16,-15.1,2.45,15,white);
   solid(20,4.9,.22,-25,2.45,23.1,white);
-  solid(7.4,4.9,.22,-31.3,2.45,7,white); solid(7.4,4.9,.22,-18.7,2.45,7,white);
+  solid(7.6,4.9,.22,-31.2,2.45,7,white); solid(7.6,4.9,.22,-18.8,2.45,7,white);
   // Porta de correr de 4,8 metros, encaixada na parede compartilhada.
   box(4.8,1.5,.24,-25,4.18,7,white);
-  for(const x of [-27,-23]) solid(.14,3.4,.28,x,1.7,7,gray);
-  box(4,.15,.28,-25,3.4,7,gray);
+  for(const x of [-27.4,-22.6]) solid(.16,3.4,.30,x,1.7,7,0x566677);
+  box(4.96,.18,.32,-25,3.4,7,0x566677);
+  box(4.8,.045,.38,-25,.035,7,0x8998a4);
+  box(4.96,.09,.34,-25,3.51,7,blue);
   const tiLeaves=[];
   for(const side of [-1,1]){
     const g=new T.Group();scene.add(g);g.position.set(-25+side*1.18,0,6.96);
@@ -220,6 +259,48 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   }
   box(7,1.85,.12,-25,2.75,22.5,0xf5f5ef);box(7.2,.08,.16,-25,1.81,22.42,gray);
   solid(3.4,.15,1.1,-25,1.02,21.0,0xc1a77d);for(const dx of [-1.45,1.45])for(const dz of [-.42,.42])box(.12,.95,.12,-25+dx,.48,21+dz,dark);deskMonitor(-25,1.1,21.0);
+  // Acabamento da TI: rodapés, faixa institucional, quadro e infraestrutura de rede.
+  for(const x of [-34.76,-15.24]) {
+    box(.05,.16,15.8,x,.15,15,0x53677b);
+    box(.05,.92,15.8,x,.67,15,0x18578b);
+    box(.06,.065,15.8,x,1.16,15,orange);
+    box(.07,.12,15.8,x,1.65,15,0xc0c9d0);
+  }
+  box(19.6,.16,.05,-25,.15,22.96,0x53677b);
+  box(19.6,.92,.05,-25,.67,22.96,0x18578b);
+  box(19.6,.065,.06,-25,1.16,22.95,orange);
+  for(const x of [-31.2,-18.8]) {box(7.55,.92,.05,x,.67,7.14,0x18578b);box(7.55,.065,.06,x,1.16,7.14,orange);}
+  for(const z of [9.5,13.5,17.5,21.5]) for(const x of [-34.69,-15.31]) {
+    box(.045,.19,.28,x,1.55,z,0xe8edf0);box(.055,.07,.09,x,1.55,z-.065,0x273849);box(.055,.07,.09,x,1.55,z+.065,0x273849);
+  }
+  // Quadro com moldura, bandeja, marcadores e apagador.
+  for(const x of [-28.55,-21.45])box(.09,1.95,.19,x,2.75,22.47,gray);
+  box(7.2,.08,.19,-25,3.72,22.47,gray);
+  for(let j=0;j<3;j++)box(.24,.045,.06,-25.3+j*.35,1.8,22.27,[blue,orange,0x222b35][j]);
+  box(.28,.09,.15,-24,1.8,22.3,0x35414e);
+  // Relógio de parede e painel didático, sem obstruir a circulação.
+  const clock=new T.Mesh(new T.CylinderGeometry(.46,.46,.09,24),new T.MeshLambertMaterial({color:0x273849}));clock.rotation.x=Math.PI/2;clock.position.set(-29.8,3.05,22.82);scene.add(clock);
+  const face=new T.Mesh(new T.CylinderGeometry(.39,.39,.025,24),new T.MeshBasicMaterial({color:0xffffff}));face.rotation.x=Math.PI/2;face.position.set(-29.8,3.05,22.76);scene.add(face);
+  const hand1=box(.035,.26,.025,-29.8,3.15,22.73,0x273849);hand1.rotation.z=.35;
+  const hand2=box(.22,.035,.025,-29.7,3.05,22.73,0x273849);hand2.rotation.z=.2;
+  const labPoster=sign('LABORATÓRIO DE INFORMÁTICA',-25,4.15,22.82,9,.62);labPoster.rotation.y=Math.PI;labPoster.material.side=T.DoubleSide;
+  // Gabinetes, monitores e organização das bancadas existentes.
+  for(const {x,z} of tiSpots){
+    box(.84,.49,.028,x+.22,1.53,z-.188,0x102c49);
+    box(.62,.07,.03,x+.22,1.69,z-.167,0x2a6b99);
+    for(let j=0;j<3;j++)box(.43-j*.07,.026,.03,x+.12,1.48-j*.065,z-.165,0x77b5cc);
+    box(.09,.035,.035,x-.92,1.84,z+.355,0x6fe2a1);
+    for(let j=0;j<3;j++)box(.055,.05,.035,x-.78-j*.08,1.7,z+.355,0x748592);
+    box(.6,.08,.13,x+.2,.89,z-.43,0x4a5865);
+  }
+  // Luminárias físicas e luz localizada por ambiente (sem sombras caras).
+  for(const x of [-31,-25,-19])for(const z of [10,19])lamp(x,4.35,z,'ti');
+  for(const x of [-5,5])for(const z of [-4,4])lamp(x,4.7,z,'reception');
+  for(const x of [-11,-16,-18])lamp(x,4.05,0,'corridor');
+  for(const x of [-21,-32])for(const z of [-4.8,4.8])lamp(x,4.05,z,'patio',true);
+  for(const z of [-1.8,1.8])lamp(-26,3.45,z,'patio',true);
+  for(const z of [10,18,25])lamp(0,3.95,z,'outside');
+
   tile(4,9,-12.8,-8.5,0xe0ddcf);
 
   const marks = {
@@ -273,9 +354,11 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     const inside=activeRegion!=='outside';
     scene.background.copy(inside?background:day);scene.fog.color.copy(inside?background:day);
     const r=regions[activeRegion];
+    for(const {l,zone,power} of localLights){l.intensity=zone===activeRegion?power:0;l.visible=zone===activeRegion;}
     for(const v of visual){
       const {o,bounds,center,size,memberships,materials}=v;
       if(o===roof||corridorRoofs.includes(o)){if(inside)o.visible=false;continue;}
+      if(o.userData.lightFixture){o.visible=o.userData.lightFixture===activeRegion;continue;}
       if(o.userData && o.userData.alwaysVisible){ o.visible=true; if(camera)o.quaternion.copy(camera.quaternion); o.material.depthTest=false; o.material.depthWrite=false; o.renderOrder=100; continue; }
       const isTIDoor=tiLeaves.includes(o);
       const active=memberships.includes(activeRegion)||(isTIDoor&&(activeRegion==='ti'||activeRegion==='patio'));
