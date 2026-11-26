@@ -149,113 +149,80 @@ function componentArt(i){
 }
 
 
-const assemblySteps=[
- ['Gabinete','Abra e prepare o gabinete, que é a estrutura onde as peças serão montadas.','Qual peça abriga e protege todos os componentes?',['Gabinete','Monitor','Teclado'],0],
- ['Placa-mãe','Instale a placa-mãe usando os pontos de fixação corretos.','Qual peça interliga todos os componentes?',['SSD','Placa-mãe','Fonte'],1],
- ['Processador (CPU)','Encaixe o processador no socket da placa-mãe com cuidado.','Qual componente realiza o processamento das instruções?',['Cooler','CPU','RAM'],1],
- ['Cooler','Fixe o cooler sobre a CPU para dissipar o calor.','Qual peça ajuda a resfriar o processador?',['Cooler','SSD','Gabinete'],0],
- ['Memória RAM','Instale os módulos de RAM nos slots da placa-mãe.','Qual componente guarda dados temporariamente?',['RAM','Fonte','HD'],0],
- ['SSD','Conecte o SSD para armazenar o sistema e os arquivos.','Qual peça armazena arquivos mesmo sem energia?',['RAM','SSD','Cooler'],1],
- ['Fonte de alimentação','Posicione a fonte para alimentar todos os componentes.','Qual peça fornece energia ao computador?',['Placa-mãe','Fonte','CPU'],1],
- ['Ligar o PC','Conecte os cabos principais e ligue o computador para testar.','Depois de montar tudo, qual é o próximo passo?',['Ligar e testar','Retirar a RAM','Remover o cooler'],0]
-];
-let assemblyIndex=0;
-let assemblyFeedback='neutral';
-let assemblyPowered=false;
-function mountAssemblyViewer(host,step,feedback='neutral',powered=false){
- disposePartViewer();
- const sc=new T.Scene();sc.background=new T.Color(0x14263a);const cam=new T.PerspectiveCamera(36,1,.1,100);cam.position.set(0,1.1,7.5);cam.lookAt(0,.3,0);
- const group=new T.Group();sc.add(group);sc.add(new T.HemisphereLight(0xffffff,0x687c98,2.2));const light=new T.DirectionalLight(0xffffff,2.8);light.position.set(3,5,6);light.castShadow=true;sc.add(light);
- const b=(w,h,d,x,y,z,c)=>box(w,h,d,x,y,z,c,group);
- const plane=(w,h,x,y,z,c,o=.3,ry=0)=>{const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({color:c,transparent:true,opacity:o,side:T.DoubleSide}));m.position.set(x,y,z);m.rotation.y=ry;group.add(m);return m;};
- const cyl=(r,h,x,y,z,c,rx=Math.PI/2)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r,h,16),surfaceMaterial(c,r*2,h,r*2));m.rotation.x=rx;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
- const cable=(pts,color=0x10151d)=>{const curve=new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(...p)));const m=new T.Mesh(new T.TubeGeometry(curve,24,.035,8,false),new T.MeshPhongMaterial({color,shininess:35}));m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
- const fan=(x,y,z,r,led=0x71808b)=>{cyl(r,.12,x,y,z,0x202a33);for(let j=0;j<7;j++){const a=j*Math.PI*2/7;const m=b(r*.23,r*.58,.07,x+Math.sin(a)*r*.45,y+Math.cos(a)*r*.45,z+.08,led);m.rotation.z=-a+.35;}cyl(r*.23,.18,x,y,z+.1,0x394956);};
- const glowColor = feedback==='wrong' ? 0xff5757 : feedback==='correct' ? 0x6bff9b : 0xffc857;
- const glowOpacity = feedback==='wrong' ? .42 : feedback==='correct' ? .36 : .22;
- const highlight=(w,h,d,x,y,z,ry=0)=>{
-   b(w,h,d,x,y,z,glowColor).material = new T.MeshPhongMaterial({color:glowColor,transparent:true,opacity:.08,emissive:glowColor,emissiveIntensity:.4});
-   plane(w+.02,h+.02,x,y,z+d/2+.02,glowColor,glowOpacity,ry);
- };
- // gabinete mais realista: estrutura, painel frontal, lateral aberta e shroud inferior
- b(.12,3.35,2.35,-1.18,0,0,0x1b232c); b(2.35,.12,2.35,0,-1.64,0,0x1b232c); b(2.35,.12,2.35,0,1.64,0,0x1b232c);
- b(2.35,3.35,.12,0,0,-1.12,0x3c4b57); b(.08,3.1,2.2,1.12,0,0,0x57646f); b(.18,3.35,2.35,-1.18,0,0,0x0f161d);
- b(2.35,3.35,.18,0,0,1.13,0x202a33); b(1.8,.18,2.0,.2,-1.2,.05,0x2b3742); // PSU shroud
- b(.8,.1,.06,.65,1.45,1.24,powered?0x7cff9f:0x5b6b76); b(.16,.16,.08,.22,1.45,1.22,powered?0x8df8a8:0x2f363b); // front LED + power button
- b(.1,3.15,.04,1.18,0,-.2,0x0e141a); for(let k=0;k<10;k++) b(.02,.18,.02,1.19,-1.1+k*.24,-.2,0x36424c); // front mesh
- fan(0,.72,1.23,.55,powered?0x78d8ff:0x71808b); fan(0,-.8,1.23,.55,powered?0x8cf2b2:0x71808b); fan(-1.18,0,0,.48,powered?0x8cf2b2:0x71808b); // rear fan
- // motherboard tray + standoffs
- b(.06,2.55,1.72,-.82,0.05,-.03,0x1e6147); for(let j=0;j<6;j++) cyl(.06,.12,-.98,0.95-j*.38,-.82,0xaeb9c3,0);
- if(step===0) highlight(2.2,3.1,.05,-.02,0,1.18,0);
- if(step>=1){
-   b(.08,2.45,1.65,-.78,0,-.05,0x23704e); for(let j=0;j<12;j++) b(.02,.5,.01,-.95+j*.15,-1.1+.12*j,.02,0x73a67f);
-   b(.16,.24,.22,-1.0,1.06,-.72,0xa8b5bf); b(.16,.24,.22,-1.0,.67,-.72,0xa8b5bf); b(.16,.24,.22,-1.0,.28,-.72,0xa8b5bf); // IO ports
- }
- if(step===1) highlight(.12,2.45,1.65,-.78,0,-.05,0);
- if(step>=2){ b(.6,.62,.12,-.64,.56,.04,0xaeb9c3); b(.52,.52,.03,-.64,.56,.12,0xcbd2d7); }
- if(step===2) highlight(.64,.66,.18,-.64,.56,.16,0);
- if(step>=3){ b(1.06,1.06,.12,-.64,.56,.28,0x303b43); fan(-.64,.56,.42,.45,powered?0x78d8ff:0x748592); }
- if(step===3) highlight(1.12,1.12,.16,-.64,.56,.42,0);
- if(step>=4){ b(.12,1.28,.18,-.12,.65,.1,0x202a33); b(.03,1.18,.03,-.12,.65,.22,0xd9b45b); b(.12,1.28,.18,.08,.65,.1,0x202a33); b(.03,1.18,.03,.08,.65,.22,0xd9b45b); }
- if(step===4) highlight(.34,1.32,.24,-.02,.65,.24,0);
- if(step>=5){ b(.95,.66,.16,.42,-.62,-.06,0x202a33); b(.76,.47,.025,.42,-.62,.04,0xcfd7dc); b(.24,.08,.08,-.02,-.9,.08,0x161e25); b(.42,.08,.08,.34,-.9,.08,0x161e25); }
- if(step===5) highlight(1.0,.72,.22,.42,-.62,.06,0);
- if(step>=6){ b(.92,.88,1.24,.64,-1.02,-.2,0x485661); fan(.64,-1.02,.49,.34,powered?0x8cf2b2:0x71808b); b(.24,.18,.04,.26,-.66,-.74,0x151b23);
-   // cabos principais da fonte
-   cable([[.14,-1.02,-.22],[-.15,-.78,-.18],[-.48,-.25,-.15],[-.78,.05,-.02]],0x161b20); // 24pin
-   cable([[.14,-1.02,-.16],[-.05,-.7,-.12],[-.42,.34,-.14],[-.62,.76,.08]],0xf0d34f); // CPU power
-   cable([[.16,-1.02,.02],[.28,-.92,.02],[.36,-.78,.02],[.42,-.62,.08]],0xc53f3b); // SATA power SSD
- }
- if(step===6) highlight(.96,.92,1.28,.64,-1.02,-.2,0);
- if(step>=7){
-   cable([[-.06,-.86,.1],[.15,-.82,.1],[.34,-.76,.1],[.42,-.66,.1]],0x4e89d7); // data SATA
-   cable([[.88,1.44,1.16],[.62,1.44,1.16],[.38,1.44,1.16],[.22,1.45,1.16]],powered?0x8df8a8:0x5b6b76); // power line to button
- }
- if(step===7) highlight(.28,.25,.12,.22,1.45,1.22,0);
- // feedback visual no próprio gabinete
- if(feedback==='wrong'){ plane(2.32,3.2,0,0,1.25,0xff5757,.12,0); }
- if(feedback==='correct'){ plane(2.32,3.2,0,0,1.25,0x6bff9b,.09,0); }
- const bounds=new T.Box3().setFromObject(group); const size=bounds.getSize(new T.Vector3()); group.scale.setScalar(3.5/Math.max(size.x,size.y,size.z)); group.rotation.set(-.28,.55,0);
- let r;try{r=new T.WebGLRenderer({antialias:true});}catch(e){host.innerHTML='<div style="padding:12px">Visualização indisponível neste navegador.</div>';return;}
- const cv=r.domElement;cv.style.cssText='width:100%;height:100%;display:block;touch-action:none;cursor:grab';host.append(cv);let zoom=1,drag=null;
- function draw(){const w=host.clientWidth||300,h=host.clientHeight||220;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();cam.position.set(0,.9,7.5/zoom);r.render(sc,cam);} 
- function rotate(dx,dy){group.rotation.y+=dx;group.rotation.x=T.MathUtils.clamp(group.rotation.x+dy,-1.0,.8);draw();}
- cv.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';};
- cv.onpointermove=e=>{if(!drag)return;rotate((e.clientX-drag.x)*.012,(e.clientY-drag.y)*.012);drag={x:e.clientX,y:e.clientY};};
- cv.onpointerup=cv.onpointercancel=cv.onlostpointercapture=()=>{drag=null;cv.style.cursor='grab';};
- cv.onwheel=e=>{e.preventDefault();zoom=T.MathUtils.clamp(zoom-e.deltaY*.001,.7,1.7);draw();};
- const bar=host.nextElementSibling;bar.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{const a=btn.dataset.view;if(a==='reset'){group.rotation.set(-.28,.55,0);zoom=1;draw();}else if(a==='plus'||a==='minus'){zoom=T.MathUtils.clamp(zoom+(a==='plus'?.15:-.15),.7,1.7);draw();}else rotate(a==='left'?-.35:a==='right'?.35:0,a==='up'?-.35:a==='down'?.35:0);});
- const ro=new ResizeObserver(draw);ro.observe(host);draw();partViewer={dispose(){ro.disconnect();group.traverse(o=>{if(o.isMesh){o.geometry.dispose(); if(Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose();}});r.dispose();r.forceContextLoss();}};
-}
 function startAssembly(){
  if(state.assemblyDone)return;
- assemblyIndex=0; assemblyFeedback='neutral'; assemblyPowered=false;
- root.querySelector('#tj-mission').previousElementSibling.textContent='MISSÃO 03 — DIA 2';
- showMission('Monte o computador seguindo a ordem correta das peças.');
- const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Hoje você vai montar um computador passo a passo. Observe o gabinete, veja o local de encaixe destacado e escolha a peça correta para cada etapa.</p><button style="padding:12px">Iniciar montagem</button>');
- d.querySelector('button').onclick=()=>renderAssemblyStep(d);
+ root.querySelector('#tj-mission').parentElement.querySelector('b').textContent='MISSÃO 03 — DIA 2';
+ showMission('Monte o computador na bancada de manutenção.');
+ const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Vamos montar um computador em uma bancada de manutenção. Trabalhe com o equipamento desligado. Clique nas peças para inspecionar e arraste cada uma até o encaixe destacado.</p><button style="padding:12px">Iniciar montagem</button>');
+ d.querySelector('button').onclick=()=>openWorkbench(d);
 }
-function renderAssemblyStep(d){
+function openWorkbench(d){
  disposePartViewer();
- const c=assemblySteps[assemblyIndex];
- d.innerHTML=`<b style="color:#f7941d">DIA 2 · ETAPA ${assemblyIndex+1}/${assemblySteps.length}</b><div class="part-view" style="height:clamp(150px,31vh,280px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste para girar a montagem em 3D. A área destacada mostra onde a peça deve ser instalada.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
- const mount=()=>{ const host=d.querySelector('.part-view'); if(!host) return; host.innerHTML=''; mountAssemblyViewer(host,assemblyIndex,assemblyFeedback,assemblyPowered); };
- mount();
- d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
-   const feedback=d.querySelector('.feedback');
-   if(Number(b.dataset.answer)!==c[4]){ assemblyFeedback='wrong'; feedback.textContent='Ainda não. Observe a área destacada no gabinete e pense na ordem lógica da montagem.'; mount(); return; }
-   assemblyFeedback='correct'; d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true); feedback.textContent='Etapa correta! A peça foi instalada no local certo.'; mount();
-   if(assemblyIndex===assemblySteps.length-1){
-     const power=document.createElement('button'); power.textContent=assemblyPowered?'PC ligado':'Ligar o PC'; power.style.cssText='padding:12px;background:#0fa968;color:white;border:0;border-radius:6px;margin-right:8px';
-     const finish=document.createElement('button'); finish.textContent='Concluir montagem'; finish.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px'; finish.disabled=!assemblyPowered; finish.style.opacity=assemblyPowered?'1':'.55';
-     d.append(power,finish);
-     power.onclick=()=>{ assemblyPowered=true; assemblyFeedback='correct'; feedback.textContent='Computador ligado com sucesso! LEDs, ventoinhas e conexões responderam corretamente.'; mount(); power.textContent='PC ligado'; power.disabled=true; power.style.opacity='.7'; finish.disabled=false; finish.style.opacity='1'; };
-     finish.onclick=()=>{ disposePartViewer(); state.assemblyDone=true; showMission('Dia 2 concluído! O computador foi montado e testado com sucesso.'); d.innerHTML='<b style="color:#f7941d">DIA 2 CONCLUÍDO</b><p>Parabéns! Você concluiu a montagem do computador, organizou os cabos e testou o botão de energia.</p><button style="padding:12px">Encerrar prática</button>'; d.querySelector('button').onclick=()=>{ closeDialog(d); state.satTI=false; player.g.position.set(-23.62,.1,18); player.legs.forEach(l=>l.rotation.x=0); player.arms.forEach(a=>a.rotation.x=0); }; };
-     return;
-   }
-   const next=document.createElement('button'); next.textContent='Próxima etapa'; next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px'; d.append(next); next.onclick=()=>{ assemblyIndex++; assemblyFeedback='neutral'; if(assemblyIndex<assemblySteps.length){ renderAssemblyStep(d); return; } };
- });
+ d.style.cssText='position:absolute;inset:0;background:#142333;z-index:20;display:flex;flex-direction:column;color:white;overflow:hidden;touch-action:none';
+ d.innerHTML=`<div style="padding:10px 16px;background:#102849;border-bottom:2px solid #f7941d;display:flex;justify-content:space-between;align-items:center"><b style="color:#ffb04f">DIA 2 · BANCADA DE MANUTENÇÃO</b><span id="bench-count">0/8</span></div><div id="bench-stage" style="flex:1;min-height:0;position:relative"></div><div style="padding:9px 14px;background:#102849;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span id="bench-message" style="flex:1;min-width:200px"></span><button id="bench-rotate">Girar peça</button><button id="bench-back" hidden>Voltar à bancada</button><button id="bench-power" disabled>Ligar PC</button><button id="bench-finish" disabled>Concluir</button></div>`;
+ d.querySelectorAll('button').forEach(b=>b.style.cssText='padding:10px;border:0;border-radius:5px;background:#f0a13b;color:#142333;font-weight:bold;cursor:pointer');
+ const host=d.querySelector('#bench-stage'), msg=d.querySelector('#bench-message'), counter=d.querySelector('#bench-count');
+ const sc=new T.Scene();sc.background=new T.Color(0x253746);const cam=new T.PerspectiveCamera(43,1,.1,100);cam.position.set(0,14,7);cam.lookAt(0,0,0);
+ let r;try{r=new T.WebGLRenderer({antialias:true});}catch(e){host.textContent='Não foi possível abrir a bancada 3D. Recarregue o jogo em um navegador com WebGL.';return;}r.setPixelRatio(Math.min(devicePixelRatio,1.6));r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;host.append(r.domElement);r.domElement.style.cssText='width:100%;height:100%;display:block;touch-action:none';
+ sc.add(new T.HemisphereLight(0xffffff,0x6f8395,2));const light=new T.DirectionalLight(0xfff2df,2.8);light.position.set(-4,10,5);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-9,right:9,top:8,bottom:-8,far:30});sc.add(light);
+ const B=(g,w,h,l,x,y,z,c)=>box(w,h,l,x,y,z,c,g);const world=new T.Group();sc.add(world);const bench=new T.Group();world.add(bench);
+ B(bench,16,.4,9,0,-.25,0,0xa77d56);B(bench,6.6,.035,6.5,0,0,0,0x35434b);
+ const frame=new T.Group();world.add(frame);const dark=0x20252c,steel=0x8e969e,pcb=0x275e45;
+ B(frame,4.4,.12,5.4,0,.15,0,steel);for(const x of [-2.2,2.2])B(frame,.12,.85,5.4,x,.57,0,dark);
+ B(frame,4.4,.85,.16,0,.57,2.7,dark);B(frame,4.4,.85,.12,0,.57,-2.7,steel);
+ // Painel frontal estilo torre tradicional: baias, USB, áudio e power.
+ for(const x of [-1.3,-.35])B(frame,.85,.13,.04,x,.75,2.8,0x10151a);
+ for(let i=0;i<2;i++)B(frame,.23,.12,.045,.65+i*.38,.77,2.8,steel);
+ for(let i=0;i<8;i++)B(frame,.24,.035,.045,-1.65+i*.22,.39,2.8,0x0c1014);
+ const led=B(frame,.22,.18,.06,1.65,.75,2.8,0x343d45);
+ // traseira: slots, conectores e grelha de ventilação.
+ for(let i=0;i<7;i++)B(frame,.24,.6,.04,-1.9+i*.29,.58,-2.78,0xb4b9bd);
+ for(let i=0;i<6;i++)for(let j=0;j<3;j++)B(frame,.09,.09,.025,.25+i*.23,.32+j*.22,-2.78,0x242a31);
+ const cyl=(g,rad,h,x,y,z,c)=>{const m=new T.Mesh(new T.CylinderGeometry(rad,rad,h,24),surfaceMaterial(c,rad*2,h,rad*2));m.position.set(x,y,z);m.castShadow=true;g.add(m);return m;};
+ function fan(g,x,y,z,rad){cyl(g,rad,.09,x,y,z,dark);for(let i=0;i<7;i++){let a=i*Math.PI*2/7;const blade=B(g,rad*.24,.065,rad*.7,x+Math.sin(a)*rad*.44,y+.07,z+Math.cos(a)*rad*.44,0x8a959f);blade.rotation.y=a+.3;}cyl(g,rad*.22,.13,x,y+.08,z,steel);}
+ fan(frame,1.55,.3,-1.95,.43);
+ const specs=[
+ ['Placa-mãe',[-5.3,.3,-1.65],[-.65,.27,-.35],[2.8,.12,3.5],'Fixe a placa-mãe nos espaçadores.'],
+ ['CPU',[-5.3,.3,1.0],[-1.03,.44,-1.15],[.66,.12,.66],'Alinhe o processador com o socket.'],
+ ['RAM',[-5.3,.3,2.65],[.38,.57,-.85],[.18,.45,1.55],'Encaixe a memória no slot DIMM.'],
+ ['Cooler',[5.3,.3,-2.1],[-1.03,.69,-1.15],[.9,.42,.9],'Fixe o cooler sobre o processador.'],
+ ['SSD',[5.3,.3,-.15],[1.45,.39,1.3],[.95,.13,1.35],'Instale o SSD na baia de armazenamento.'],
+ ['Fonte',[5.3,.3,2.15],[-.95,.59,2.02],[1.7,.62,1.05],'Instale a fonte na parte inferior.'],
+ ['Cabo ATX / CPU',[-5.2,.3,-3.25],[.57,.48,.15],[.4,.15,.4],'Conecte a alimentação ATX e CPU.'],
+ ['Cabos SATA',[5.2,.3,3.65],[.92,.48,.65],[.4,.15,.4],'Conecte os cabos SATA de dados e energia.']];
+ const parts=[],targets=[],done=new Set();let selected=null,inspecting=false,drag=null,orientation=0,powered=false,preview=null;
+ function make(i){const g=new T.Group();const [w,h,l]=specs[i][3];
+ if(i===0){B(g,w,h,l,0,0,0,pcb);B(g,.76,.08,.76,-.38,.11,-.8,steel);B(g,.55,.03,.55,-.38,.17,-.8,dark);for(let j=0;j<4;j++)B(g,.09,.12,1.55,.65+j*.18,.09,-.5,dark);for(let j=0;j<3;j++)B(g,1.8,.09,.12,-.2,.09,.45+j*.39,0xced4d8);for(let j=0;j<5;j++)B(g,.23,.25,.35,-1.3,.14,-1.35+j*.48,steel);for(let j=0;j<9;j++)cyl(g,.065,.18,-.9+j*.18,.13,-1.48,steel);for(let j=0;j<9;j++)B(g,.015,.013,1.4,-1.1+j*.22,.07,.6,0x63916f);}
+ else if(i===1){B(g,.7,.06,.7,0,0,0,pcb);B(g,.59,.09,.59,0,.07,0,steel);for(let x=0;x<8;x++)for(let z=0;z<8;z++)B(g,.045,.02,.045,-.28+x*.08,-.04,-.28+z*.08,0xd4b15b);B(g,.07,.02,.07,-.28,.12,-.28,0xe4b94e);}
+ else if(i===2){B(g,.13,.42,1.55,0,0,0,pcb);for(let j=0;j<8;j++)B(g,.035,.23,.13,.085,.04,-.65+j*.18,dark);for(let j=0;j<24;j++)B(g,.04,.08,.036,.075,-.17,-.7+j*.06,0xd4b15b);}
+ else if(i===3){B(g,.9,.2,.9,0,0,0,steel);for(let j=0;j<10;j++)B(g,.04,.23,.87,-.4+j*.09,.03,0,0xb8c3ca);fan(g,0,.22,0,.43);}
+ else if(i===4){B(g,.95,.13,1.35,0,0,0,0x23292f);B(g,.83,.014,1.12,0,.074,0,0xaeb9c3);const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#e5e7eb';ctx.fillRect(0,0,256,128);ctx.fillStyle='#172c43';ctx.fillRect(0,0,256,38);ctx.fillStyle='white';ctx.font='bold 24px Arial';ctx.fillText('SOLID STATE DRIVE',8,27);ctx.fillStyle='#182c3e';ctx.font='bold 32px Arial';ctx.fillText('SSD',12,80);ctx.font='16px Arial';ctx.fillText('2.5” SATA',12,105);const tex=new T.CanvasTexture(c);const m=new T.Mesh(new T.PlaneGeometry(.83,1.1),new T.MeshBasicMaterial({map:tex}));m.rotation.x=-Math.PI/2;m.position.y=.085;g.add(m);for(let j=0;j<7;j++)B(g,.024,.025,.09,-.35+j*.035,.01,.7,0xd8b55f);for(let j=0;j<15;j++)B(g,.021,.025,.09,-.02+j*.026,.01,.7,0xd8b55f);}
+ else if(i===5){B(g,w,h,l,0,0,0,0x414a51);fan(g,0,h/2,0,.43);B(g,.45,.25,.035,-.4,0,-.54,dark);for(let j=0;j<3;j++)B(g,.06,.12,.025,-.54+j*.14,0,-.565,steel);}
+ else {for(let j=0;j<5;j++)tube(g,[[ -.55,.05,j*.045],[0,.12,.4+j*.045],[.5,.05,j*.045]],i===6?0x22272b:0xb43c36,.028);B(g,.3,.12,.25,-.55,.05,0,dark);B(g,.24,.12,.25,.5,.05,0,dark);}
+ return g;}
+ function tube(g,points,c,rad=.035){const mesh=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p))),24,rad,8,false),surfaceMaterial(c,.1,.1,.1));g.add(mesh);return mesh;}
+ specs.forEach((s,i)=>{const g=make(i);g.position.set(...s[1]);world.add(g);g.userData.index=i;parts.push(g);const t=new T.Mesh(new T.BoxGeometry(s[3][0]+.12,.045,s[3][2]+.12),new T.MeshBasicMaterial({color:0xffc14d,transparent:true,opacity:.38,depthWrite:false}));t.position.set(s[2][0],s[2][1]+.03,s[2][2]);world.add(t);targets.push(t);});
+ // Braços e mãos voxel, vistos do ponto de vista do aluno.
+ const arms=new T.Group();world.add(arms);for(const x of [-2.8,2.8]){const a=B(arms,.78,.55,2.05,x,.45,4.1,0xf7941d);a.rotation.y=x<0?-.28:.28;B(arms,.6,.45,.78,x*.86,.49,3.05,0xc9956e);B(arms,.22,.3,.38,x*.86+(x<0?.34:-.34),.47,2.85,0xc9956e);}
+ const labels=specs.map((s,i)=>{const el=document.createElement('button');el.textContent=s[0];el.style.cssText='position:absolute;transform:translate(-50%,-50%);padding:5px 8px;background:#132c43dd;color:white;border:1px solid #7893a7;border-radius:5px;font-size:clamp(10px,1.25vw,14px);touch-action:none;cursor:pointer';host.append(el);el.onclick=()=>{if(!done.has(i))inspect(i);};return el;});
+ const ray=new T.Raycaster(),pointer=new T.Vector2(),plane=new T.Plane(new T.Vector3(0,1,0),-.65),point=new T.Vector3();const cv=r.domElement;
+ function setRay(e){const q=cv.getBoundingClientRect();pointer.set((e.clientX-q.left)/q.width*2-1,-(e.clientY-q.top)/q.height*2+1);ray.setFromCamera(pointer,cam);}
+ function hit(e){setRay(e);const hits=ray.intersectObjects(parts.filter((_,i)=>!done.has(i)),true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!parts.includes(o))o=o.parent;return parts.indexOf(o);}
+ function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Clique para ampliar; arraste para encaixar.`;targets.forEach((t,i)=>t.visible=!inspecting&&i===next);d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
+ function inspect(i){if(inspecting)leaveInspect();selected=i;inspecting=true;world.visible=false;preview=make(i);sc.add(preview);const sz=new T.Box3().setFromObject(preview).getSize(new T.Vector3());preview.scale.setScalar(4/Math.max(sz.x,sz.y,sz.z));preview.rotation.set(.35,.5,0);cam.position.set(0,5,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=false;msg.textContent=specs[i][0]+' — arraste para rotacionar. Volte à bancada para encaixar.';}
+ function leaveInspect(){if(preview){sc.remove(preview);free(preview);preview=null;}inspecting=false;world.visible=true;cam.position.set(0,14,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=true;text();}
+ function free(g){g.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map)o.material.map.dispose();o.material.dispose();}});}
+ function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];if(i!==next||Math.hypot(g.position.x-target[0],g.position.z-target[2])> .78){g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste até a área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
+ g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.65,.6,1.5],[-1.65,.55,-1.6],[-1.03,.5,-1.5]],dark);tube(world,[[-.95,.7,2],[.85,.45,1.6],[.85,.4,.15],[.55,.48,.15]],dark);}else{tube(world,[[.5,.43,.65],[.9,.45,.7],[1.45,.46,1.75]],0xb93c36);tube(world,[[-.95,.65,2],[.6,.5,2.25],[1.45,.46,1.75]],dark);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;}
+ cv.onpointerdown=e=>{if(e.button!==0)return;cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};}};
+ cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){setRay(e);if(ray.ray.intersectPlane(plane,point))parts[drag.i].position.copy(point);}};
+ cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved)place(a.i);else inspect(a.i);};cv.onpointercancel=()=>{if(drag&&drag.i>=0)parts[drag.i].position.set(...specs[drag.i][1]);drag=null;};
+ d.querySelector('#bench-back').onclick=leaveInspect;d.querySelector('#bench-rotate').onclick=()=>{if(inspecting)preview.rotation.y+=Math.PI/2;else if(selected!==null&&!done.has(selected))parts[selected].rotation.y+=Math.PI/2;};
+ d.querySelector('#bench-power').onclick=()=>{if(done.size!==8)return;powered=true;led.material.color.setHex(0x6aff98);led.material.emissive.setHex(0x37b862);led.material.emissiveIntensity=1;text();msg.textContent='✓ Teste de energia simulado: LED ligado. Montagem concluída.';};
+ let raf;function draw(){const w=host.clientWidth,h=host.clientHeight;if(w&&h){if(r.domElement.width!==Math.round(w*r.getPixelRatio())||r.domElement.height!==Math.round(h*r.getPixelRatio())){r.setSize(w,h,false);cam.aspect=w/h;cam.fov=T.MathUtils.radToDeg(2*Math.atan(Math.max(Math.tan(T.MathUtils.degToRad(43/2)),8.6/(15.6*(w/h)))));cam.updateProjectionMatrix();}r.render(sc,cam);labels.forEach((el,i)=>{el.hidden=inspecting||done.has(i)||(drag&&drag.i===i);if(!el.hidden){const v=new T.Vector3(...specs[i][1]);v.z+=.7;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});}raf=requestAnimationFrame(draw);}text();draw();
+ d.querySelector('#bench-finish').onclick=()=>{if(!powered)return;cancelAnimationFrame(raf);free(world);if(preview)free(preview);r.dispose();state.assemblyDone=true;state.satTI=false;closeDialog(d);player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);showMission('Dia 2 concluído! Computador montado e testado.');};
 }
+
 let partViewer=null;
 function disposePartViewer(){if(!partViewer)return;partViewer.dispose();partViewer=null;}
 function mountPartViewer(host,i){
@@ -287,7 +254,7 @@ function mountPartViewer(host,i){
 
 function startLesson(){
  if(state.lessonDone)return;
- root.querySelector('#tj-mission').previousElementSibling.textContent='MISSÃO 02 — DIA 1';
+ root.querySelector('#tj-mission').parentElement.querySelector('b').textContent='MISSÃO 02 — DIA 1';
  showMission('Conheça os componentes do computador.');
  const d=createDialog('PROFESSOR DE TI','<p>Bem-vindo à primeira aula! Hoje vamos conhecer as peças do computador e suas funções.</p><button style="padding:12px">Começar aula</button>');
  d.querySelector('button').onclick=()=>renderComponent(d);

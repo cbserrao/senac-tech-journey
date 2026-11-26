@@ -281,14 +281,14 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   // Acabamento da TI: rodapés, faixa institucional, quadro e infraestrutura de rede.
   for(const x of [-34.76,-15.24]) {
     box(.05,.16,15.8,x,.15,15,0x53677b);
-    box(.05,.92,15.8,x,.67,15,0x18578b);
+    box(.05,.92,15.8,x,.67,15,0xf4f5f7);
     box(.06,.065,15.8,x,1.16,15,orange);
-    box(.07,.12,15.8,x,1.65,15,0xc0c9d0);
+    box(.07,.12,15.8,x,1.65,15,0xffffff);
   }
   box(19.6,.16,.05,-25,.15,22.96,0x53677b);
-  box(19.6,.92,.05,-25,.67,22.96,0x18578b);
+  box(19.6,.92,.05,-25,.67,22.96,0xf4f5f7);
   box(19.6,.065,.06,-25,1.16,22.95,orange);
-  for(const x of [-31.2,-18.8]) {box(7.55,.92,.05,x,.67,7.14,0x18578b);box(7.55,.065,.06,x,1.16,7.14,orange);}
+  for(const x of [-31.2,-18.8]) {box(7.55,.92,.05,x,.67,7.14,0xf4f5f7);box(7.55,.065,.06,x,1.16,7.14,orange);}
   for(const z of [9.5,13.5,17.5,21.5]) for(const x of [-34.69,-15.31]) {
     box(.045,.19,.28,x,1.55,z,0xe8edf0);box(.055,.07,.09,x,1.55,z-.065,0x273849);box(.055,.07,.09,x,1.55,z+.065,0x273849);
   }
