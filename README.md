@@ -1,8 +1,8 @@
-# Senac Tech Journey — protótipo 0.5
+# Senac Tech Journey — protótipo 0.6
 
-Melhorias da v0.5:
-- portas principais maiores e mais integradas visualmente às paredes
-- NPC da portaria reposicionado para fora da cabine
-- NPCs do atendimento reposicionados para trás dos balcões
-- controles touch com joystick virtual, direcionais e botão OK
-- mantida a câmera 360° por arraste
+Melhorias da v0.6:
+- dois joysticks circulares na tela (visual estilo jogo mobile)
+- joystick esquerdo para movimento
+- joystick direito para rotação da câmera
+- botão OK mantido para interação
+- movimentação agora é relativa à direção da câmera/jogador, ajustando-se ao giro atual
