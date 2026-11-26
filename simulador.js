@@ -82,7 +82,7 @@ const receptionNpcs=[npc,npc2], patioNpcs=[canteenNpc1,canteenNpc2,tableNpc1,tab
 
 
 const professor=detailedPerson(-22.5,20.8,{shirt:0x174e80,accent:0xf7941d,badge:true,hair:0x352820}); professor.g.rotation.y=Math.PI;
-const state={running:false, dialog:false, greeted:false, enrolled:false, arrivedTI:false, satTI:false, lessonDone:false, studentName:'', camDist:8.2};
+const state={running:false, dialog:false, greeted:false, enrolled:false, arrivedTI:false, satTI:false, lessonDone:false, assemblyDone:false, studentName:'', camDist:8.2};
 const keys=new Set(); let last=performance.now(), walk=0;
 let moveJoy={x:0,y:0,active:false};
 const mobile = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -147,6 +147,65 @@ function componentArt(i){
  const arts=[board,cpu,ram,ssd,psu,cooler,caseArt];
  return `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:min(245px,32vh);display:block;image-rendering:pixelated" role="img" aria-label="${components[i][0]}"><defs><linearGradient id="metal" x2="1" y2="1"><stop stop-color="#e1e6e9"/><stop offset=".5" stop-color="#a4afb7"/><stop offset="1" stop-color="#687782"/></linearGradient><linearGradient id="darkmetal" x2="1" y2="1"><stop stop-color="#566570"/><stop offset="1" stop-color="#26343f"/></linearGradient></defs><rect x="18" y="5" width="284" height="170" rx="5" fill="#14263a" stroke="#39577a"/><ellipse cx="160" cy="166" rx="100" ry="5" fill="#0a1827" opacity=".6"/>${arts[i]}</svg>`;
 }
+
+const assemblySteps=[
+ ['Gabinete','Abra e prepare o gabinete, que é a estrutura onde as peças serão montadas.','Qual peça abriga e protege todos os componentes?',['Gabinete','Monitor','Teclado'],0],
+ ['Placa-mãe','Instale a placa-mãe usando os pontos de fixação corretos.','Qual peça interliga todos os componentes?',['SSD','Placa-mãe','Fonte'],1],
+ ['Processador (CPU)','Encaixe o processador no socket da placa-mãe com cuidado.','Qual componente realiza o processamento das instruções?',['Cooler','CPU','RAM'],1],
+ ['Cooler','Fixe o cooler sobre a CPU para dissipar o calor.','Qual peça ajuda a resfriar o processador?',['Cooler','SSD','Gabinete'],0],
+ ['Memória RAM','Instale os módulos de RAM nos slots da placa-mãe.','Qual componente guarda dados temporariamente?',['RAM','Fonte','HD'],0],
+ ['SSD','Conecte o SSD para armazenar o sistema e os arquivos.','Qual peça armazena arquivos mesmo sem energia?',['RAM','SSD','Cooler'],1],
+ ['Fonte de alimentação','Posicione a fonte para alimentar todos os componentes.','Qual peça fornece energia ao computador?',['Placa-mãe','Fonte','CPU'],1],
+ ['Ligar o PC','Conecte os cabos principais e ligue o computador para testar.','Depois de montar tudo, qual é o próximo passo?',['Ligar e testar','Retirar a RAM','Remover o cooler'],0]
+];
+let assemblyIndex=0;
+function mountAssemblyViewer(host,step){
+ disposePartViewer();
+ const sc=new T.Scene();sc.background=new T.Color(0x14263a);const cam=new T.PerspectiveCamera(36,1,.1,100);cam.position.set(0,1.1,7.5);cam.lookAt(0,.3,0);
+ const group=new T.Group();sc.add(group);sc.add(new T.HemisphereLight(0xffffff,0x687c98,2.2));const light=new T.DirectionalLight(0xffffff,2.6);light.position.set(3,5,6);sc.add(light);
+ const b=(w,h,d,x,y,z,c)=>box(w,h,d,x,y,z,c,group);
+ const cyl=(r,h,x,y,z,c,rx=Math.PI/2)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r,h,16),surfaceMaterial(c,r*2,h,r*2));m.rotation.x=rx;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
+ const fan=(x,y,z,r)=>{cyl(r,.12,x,y,z,0x202a33);for(let j=0;j<7;j++){const a=j*Math.PI*2/7;const m=b(r*.23,r*.58,.07,x+Math.sin(a)*r*.45,y+Math.cos(a)*r*.45,z+.08,0x71808b);m.rotation.z=-a+.35;}cyl(r*.23,.18,x,y,z+.1,0x394956);};
+ // case shell
+ b(.12,3.2,2.3,-1.18,0,0,0x1b232c); b(2.3,.12,2.3,0,-1.6,0,0x1b232c); b(2.3,.12,2.3,0,1.6,0,0x1b232c);
+ b(2.3,3.2,.12,0,0,-1.1,0x394651); b(2.3,3.2,.16,0,0,1.1,0x202a33);
+ b(.06,3.0,2.15,1.12,0,0,0x55606b); // open side frame
+ if(step>=0){b(.2,.12,.08,.76,1.36,1.18,0x67db9b); fan(0,.6,1.2,.55); fan(0,-.8,1.2,.55);}
+ if(step>=1){ b(.08,2.45,1.65,-.78,0,-.05,0x23704e); for(let j=0;j<6;j++) cyl(.07,.14,-.96,0.98-j*.38,-.82,0xaeb9c3,0); }
+ if(step>=2){ b(.6,.62,.12,-.64,.56,.04,0xaeb9c3); b(.52,.52,.03,-.64,.56,.12,0xcbd2d7); }
+ if(step>=3){ b(1.1,1.1,.12,-.64,.56,.28,0x303b43); fan(-.64,.56,.42,.46); }
+ if(step>=4){ b(.12,1.28,.18,-.12,.65,.1,0x202a33); b(.03,1.18,.03,-.12,.65,.22,0xd9b45b); b(.12,1.28,.18,.08,.65,.1,0x202a33); b(.03,1.18,.03,.08,.65,.22,0xd9b45b); }
+ if(step>=5){ b(.95,.66,.16,.38,-.58,.2,0x222d36); b(.75,.46,.02,.38,-.58,.29,0xcfd7dc); b(.18,.08,.1,-.02,-.87,.14,0x161e25); b(.35,.08,.1,.32,-.87,.14,0x161e25); }
+ if(step>=6){ b(.95,.95,1.35,.62,-1.02,-.1,0x485661); fan(.62,-1.02,.62,.34); b(.24,.18,.04,.26,-.66,-.76,0x151b23); }
+ if(step>=7){ b(.03,1.3,.03,-.9,.1,.14,0xc53f3b); b(.03,1.15,.03,-.78,.08,.08,0xf1d34f); b(.03,1.45,.03,-.6,-.18,.26,0x67db9b); b(.03,.95,.03,-.02,-.35,.25,0x73a6e8); b(.18,.18,.18,.76,1.36,1.18,0x9ef39f); }
+ const bounds=new T.Box3().setFromObject(group); const size=bounds.getSize(new T.Vector3()); group.scale.setScalar(3.5/Math.max(size.x,size.y,size.z)); group.rotation.set(-.28,.55,0);
+ let r;try{r=new T.WebGLRenderer({antialias:true});}catch(e){host.innerHTML='<div style="padding:12px">Visualização indisponível neste navegador.</div>';return;}
+ const cv=r.domElement;cv.style.cssText='width:100%;height:100%;display:block;touch-action:none;cursor:grab';host.append(cv);let zoom=1,drag=null;
+ function draw(){const w=host.clientWidth||300,h=host.clientHeight||220;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();cam.position.set(0,.9,7.5/zoom);r.render(sc,cam);} 
+ function rotate(dx,dy){group.rotation.y+=dx;group.rotation.x=T.MathUtils.clamp(group.rotation.x+dy,-1.0,.8);draw();}
+ cv.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';};
+ cv.onpointermove=e=>{if(!drag)return;rotate((e.clientX-drag.x)*.012,(e.clientY-drag.y)*.012);drag={x:e.clientX,y:e.clientY};};
+ cv.onpointerup=cv.onpointercancel=cv.onlostpointercapture=()=>{drag=null;cv.style.cursor='grab';};
+ cv.onwheel=e=>{e.preventDefault();zoom=T.MathUtils.clamp(zoom-e.deltaY*.001,.7,1.7);draw();};
+ const bar=host.nextElementSibling;bar.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{const a=btn.dataset.view;if(a==='reset'){group.rotation.set(-.28,.55,0);zoom=1;draw();}else if(a==='plus'||a==='minus'){zoom=T.MathUtils.clamp(zoom+(a==='plus'?.15:-.15),.7,1.7);draw();}else rotate(a==='left'?-.35:a==='right'?.35:0,a==='up'?-.35:a==='down'?.35:0);});
+ const ro=new ResizeObserver(draw);ro.observe(host);draw();partViewer={dispose(){ro.disconnect();group.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});r.dispose();r.forceContextLoss();}};
+}
+function startAssembly(){
+ if(state.assemblyDone)return;
+ assemblyIndex=0;
+ root.querySelector('#tj-mission').previousElementSibling.textContent='MISSÃO 03 — DIA 2';
+ showMission('Monte o computador seguindo a ordem correta das peças.');
+ const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Hoje você vai montar um computador passo a passo. Observe a bancada e escolha a peça correta para cada etapa.</p><button style="padding:12px">Iniciar montagem</button>');
+ d.querySelector('button').onclick=()=>renderAssemblyStep(d);
+}
+function renderAssemblyStep(d){
+ disposePartViewer();
+ const c=assemblySteps[assemblyIndex];
+ d.innerHTML=`<b style="color:#f7941d">DIA 2 · ETAPA ${assemblyIndex+1}/${assemblySteps.length}</b><div class="part-view" style="height:clamp(150px,31vh,280px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste para girar a montagem em 3D.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
+ mountAssemblyViewer(d.querySelector('.part-view'),assemblyIndex);
+ d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{ const feedback=d.querySelector('.feedback'); if(Number(b.dataset.answer)!==c[4]){feedback.textContent='Ainda não. Pense na ordem lógica da montagem.'; return;} d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true); feedback.textContent='Etapa correta!'; const next=document.createElement('button'); next.textContent=assemblyIndex===assemblySteps.length-1?'Concluir montagem':'Próxima etapa'; next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px'; d.append(next); next.onclick=()=>{ assemblyIndex++; if(assemblyIndex<assemblySteps.length){ renderAssemblyStep(d); return; } disposePartViewer(); state.assemblyDone=true; showMission('Dia 2 concluído! O computador foi montado com sucesso.'); d.innerHTML='<b style="color:#f7941d">DIA 2 CONCLUÍDO</b><p>Parabéns! Você concluiu a montagem básica do computador. Na próxima aula, podemos partir para conexões internas, BIOS e teste final.</p><button style="padding:12px">Encerrar prática</button>'; d.querySelector('button').onclick=()=>{ closeDialog(d); state.satTI=false; player.g.position.set(-23.62,.1,18); player.legs.forEach(l=>l.rotation.x=0); player.arms.forEach(a=>a.rotation.x=0); }; }; });
+}
+
 let partViewer=null;
 function disposePartViewer(){if(!partViewer)return;partViewer.dispose();partViewer=null;}
 function mountPartViewer(host,i){
@@ -190,23 +249,24 @@ function renderComponent(d){
  mountPartViewer(d.querySelector(".part-view"),lessonIndex);
  d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
  const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){feedback.textContent='Tente novamente. Leia a função da peça.';return;}
- d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;showMission('Dia 1 concluído! Você já conhece os principais componentes.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. Na próxima aula, vamos montar o computador.</p><button style="padding:12px">Encerrar aula</button>';d.querySelector('button').onclick=()=>{closeDialog(d);state.satTI=false;player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);};};
+ d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;showMission('Dia 1 concluído! Sente-se novamente na bancada para iniciar o Dia 2 — montagem do computador.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. Agora vamos para o <b>Dia 2 — montagem do computador</b>.</p><button style="padding:12px">Ir para a prática</button>';d.querySelector('button').onclick=()=>{closeDialog(d);state.satTI=false;player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);};};
  });
 }
 
 function interact(){
   if(!state.running||state.dialog) return;
-  if(state.satTI){if(!state.lessonDone)startLesson();return;}
+  if(state.satTI){ if(!state.lessonDone) startLesson(); else if(!state.assemblyDone) startAssembly(); return; }
   if(near(world.marks.doorman,2.2) && !state.greeted){
     const d=createDialog('PORTEIRO','<p>Bom dia! Seja bem-vindo ao Senac. Posso liberar sua entrada.</p><p><button id="gd" style="padding:12px">Bom dia!</button></p>');
     d.querySelector('#gd').onclick=()=>{ state.greeted=true; d.innerHTML='<b style="color:#f7941d">PORTEIRO</b><p>Perfeito! Entrada liberada. Siga pelo corredor até o atendimento para realizar sua matrícula.</p><p><button id="ok" style="padding:12px">Continuar</button></p>'; showMission('Entre no prédio, vá ao atendimento e realize sua matrícula.'); d.querySelector('#ok').onclick=()=>closeDialog(d); };
     return;
   }
-  if(state.arrivedTI && !state.satTI && !state.lessonDone && near(world.marks.tiSeat,2.0)){
+  if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0) && (!state.lessonDone || !state.assemblyDone)){
     state.satTI=true; player.g.position.set(world.marks.tiSeat.x,-.25,world.marks.tiSeat.z); player.g.rotation.y=Math.PI; player.legs.forEach(l=>l.rotation.x=-Math.PI/2); player.arms.forEach(a=>a.rotation.x=-.65);
-    const d=createDialog('SALA DE TI','<p>Muito bem! Você encontrou sua bancada e sentou para iniciar a aula prática.</p><p><button id="sitok" style="padding:12px">Continuar</button></p>');
-    showMission('Perfeito! Você já está na bancada. Agora vamos iniciar a aula de componentes do computador.');
-    d.querySelector('#sitok').onclick=()=>{closeDialog(d);startLesson();};
+    const intro = !state.lessonDone ? 'a aula prática de componentes do computador' : 'a prática do Dia 2 — montagem do computador';
+    const d=createDialog('SALA DE TI',`<p>Muito bem! Você encontrou sua bancada e sentou para iniciar ${intro}.</p><p><button id="sitok" style="padding:12px">Continuar</button></p>`);
+    showMission(!state.lessonDone ? 'Perfeito! Você já está na bancada. Agora vamos iniciar a aula de componentes do computador.' : 'Perfeito! Você já está na bancada. Agora vamos iniciar a montagem do computador.');
+    d.querySelector('#sitok').onclick=()=>{closeDialog(d); !state.lessonDone ? startLesson() : startAssembly();};
     return;
   }
   if(near(world.marks.deskLeft,2.9) || near(world.marks.deskRight,2.9)){
@@ -252,7 +312,7 @@ function frame(now){
     }
     if(!state.greeted && near(world.marks.doorman,2.3)) hint.textContent=(mobile?'OK: falar com o porteiro':'Pressione E para falar com o porteiro');
     else if(state.greeted && !state.enrolled && (near(world.marks.deskLeft,2.9)||near(world.marks.deskRight,2.9))) hint.textContent=(mobile?'OK: falar no atendimento':'Pressione E para falar no atendimento');
-    else if(state.arrivedTI && !state.satTI && !state.lessonDone && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?'OK: sentar na bancada':'Pressione E para sentar na bancada');
+    else if(state.arrivedTI && !state.satTI && (!state.lessonDone || !state.assemblyDone) && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?(!state.lessonDone?'OK: sentar para a aula':'OK: sentar para montar'):(!state.lessonDone?'Pressione E para sentar na bancada':'Pressione E para iniciar a montagem')); 
     else hint.textContent=(mobile?'Joystick: andar · OK: interagir':'WASD / setas: andar · E: interagir');
   }
   const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x<=-9.25&&p.x>=-35.2&&p.z>=-7.2&&p.z<=23.3)||(p.x>=9.25&&p.x<=16.3&&p.z>=1.95&&p.z<=7.4));
@@ -269,7 +329,7 @@ function frame(now){
   for(const n of receptionNpcs) n.g.visible = (zone==='reception');
   for(const n of patioNpcs) n.g.visible = (zone==='patio'); professor.g.visible=zone==='ti';
   let guideTarget=null;
-  if(state.running && state.enrolled && !state.satTI && !state.lessonDone){
+  if(state.running && state.enrolled && !state.satTI && (!state.lessonDone || !state.assemblyDone)){
     if(!state.arrivedTI){
       if(p.x>-9.5) guideTarget=world.marks.corridorEntry;
       else if(p.x>-19.5) guideTarget=world.marks.patio;
