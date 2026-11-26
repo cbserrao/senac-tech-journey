@@ -138,10 +138,13 @@ function frame(now){
     else if(state.greeted && !state.enrolled && (near(world.marks.deskLeft,2.9)||near(world.marks.deskRight,2.9))) hint.textContent=(mobile?'OK: falar no atendimento':'Pressione E para falar no atendimento');
     else hint.textContent=(mobile?'Joystick: andar · OK: interagir':'WASD / setas: andar · E: interagir');
   }
-  const camHeight=6.3, offX=0, offZ=state.camDist;
+  const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x>=9.25&&p.x<=34.2&&p.z>=-7.2&&p.z<=17.3)||(p.x>=-17.6&&p.x<=-9.25&&Math.abs(p.z)<=3.6));
+  const camHeight=indoors?11.0:6.3, offX=0, offZ=indoors?10.5:state.camDist;
   const target = state.running ? new T.Vector3(p.x+offX, p.y+camHeight, p.z+offZ) : new T.Vector3(17,16,38);
   camera.position.lerp(target,1-Math.exp(-dt*6));
   camera.lookAt(state.running?p.x:0, state.running?1.6:2.5, state.running?p.z:14);
+  const zone=world.applyView(p,state.running,camera);
+  for(const n of [doorman,npc,npc2])n.g.visible=zone==='outside'?n===doorman:zone==='reception'&&n!==doorman;
   renderer.render(scene,camera);
 }
 camera.position.set(17,16,38); requestAnimationFrame(frame);

@@ -1,2 +1,2 @@
-# Senac Tech Journey v0.9.1
-Sala de TI transferida para o lado oposto da cantina. Acesso, paredes, colisões, placa e detecção de chegada atualizados.
+# Senac Tech Journey — v1.0
+Visão por ambiente, corte visual de paredes, áreas inativas escurecidas e quatro bancadas de TI maiores. Colisões mantidas. Controles da versão anterior preservados. Testar visualmente no navegador após publicar.

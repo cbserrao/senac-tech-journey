@@ -134,8 +134,9 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   // Portas principais maiores e mais integradas às paredes
   function doubleDoor(z, label){
     const leaves=[];
-    solid(3.45,recH,.24,-5.0,recH/2,z,white);
-    solid(3.45,recH,.24, 5.0,recH/2,z,white);
+    solid(1.7,recH,.24,-2.65,recH/2,z,white);
+    solid(1.7,recH,.24, 2.65,recH/2,z,white);
+    box(3.6,1.6,.24,0,4.7,z,white);
     box(.32,3.9,.28,-1.72,1.95,z,white); box(.32,3.9,.28,1.72,1.95,z,white); box(3.75,.34,.28,0,3.76,z,white);
     const baseX=.82, openDist=1.45;
     for(const s of [-1,1]){
@@ -188,9 +189,19 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   solid(10,4.7,.22,25,2.35,17,white);
   for(const x of [21.5,28.5]) solid(3,4.7,.22,x,2.35,7,white);
   box(4,1.6,.22,25,3.9,7,white); const tiSign=sign('SALA DE TI',25,3.9,6.86,3.7,.55); tiSign.rotation.y=Math.PI; tiSign.material.side=T.DoubleSide;
-  for(const x of [22,28]) for(const z of [10,13,15.5]) {solid(2.2,.12,.85,x,.85,z,0xc1a77d);for(const dx of [-.85,.85])box(.08,.8,.08,x+dx,.4,z,gray);deskMonitor(x,.92,z+.2);box(.48,.055,.19,x,.95,z-.22,dark);box(.13,.42,.36,x+.8,1.12,z+.1,dark);chair(x,z-1);}
+  for(const x of [22.35,27.65]) for(const z of [10.7,14.0]) {
+    solid(3.0,.15,1.25,x,1.02,z,0xc1a77d);
+    for(const dx of [-1.32,1.32]) for(const dz of [-.48,.48]) box(.12,.96,.12,x+dx,.48,z+dz,dark);
+    box(.95,.62,.12,x-.25,1.55,z-.28,dark);box(.82,.48,.025,x-.25,1.55,z-.205,0x15283d);
+    box(.13,.2,.14,x-.25,1.19,z-.28,gray);box(.4,.045,.32,x-.25,1.12,z-.23,dark);
+    box(.7,.055,.28,x-.25,1.12,z+.28,dark);for(let k=0;k<7;k++)box(.065,.008,.18,x-.55+k*.09,1.153,z+.28,0x52616e);
+    box(.15,.065,.23,x+.35,1.12,z+.28,0x25313d);
+    box(.48,.86,.72,x+1.02,1.53,z-.05,0x263747);box(.4,.79,.035,x+1.02,1.53,z+.32,0x17232e);
+    box(.12,.045,.04,x+1.02,1.8,z+.35,0x69c78c);for(let k=0;k<4;k++)box(.29,.035,.04,x+1.02,1.2+k*.085,z+.35,0x445566);
+    chair(x-.25,z+1.13);
+  }
   box(5,1.7,.12,25,2.6,16.85,0xf5f5ef);box(5.15,.08,.16,25,1.71,16.8,gray);
-  solid(2,.12,.8,25,.85,15.8,0xc1a77d);deskMonitor(25,.92,15.8);
+  solid(2.8,.15,1.05,25,1.02,16.0,0xc1a77d);for(const dx of [-1.2,1.2])for(const dz of [-.4,.4])box(.12,.95,.12,25+dx,.48,16+dz,dark);deskMonitor(25,1.1,16);
   tile(4,9,-12.8,-8.5,0xe0ddcf);
 
   const marks = {
@@ -217,8 +228,52 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
 
   const corridorRoofs = scene.children.filter(o=>o.isMesh && o.geometry && o.geometry.parameters && o.geometry.parameters.width===4.7);
 
+  // Visão por cômodo: geometria visual separada das colisões.
+  const regions={
+    reception:{minX:-9.25,maxX:9.25,minZ:-8.25,maxZ:8.25},
+    corridor:{minX:9.25,maxX:19.1,minZ:-1.95,maxZ:1.95},
+    patio:{minX:19.1,maxX:34.2,minZ:-7.2,maxZ:7.2},
+    ti:{minX:19.8,maxX:30.2,minZ:7.2,maxZ:17.3},
+    side:{minX:9.25,maxX:16.3,minZ:1.95,maxZ:7.4},
+    left:{minX:-17.6,maxX:-9.25,minZ:-3.6,maxZ:3.6}
+  };
+  const regionAt=(x,z)=>Object.keys(regions).find(k=>{const r=regions[k];return x>=r.minX&&x<=r.maxX&&z>=r.minZ&&z<=r.maxZ;})||'outside';
+  scene.updateMatrixWorld(true);
+  const visual=scene.children.filter(o=>o.isMesh||o.isGroup).map(o=>{
+    const bounds=new T.Box3().setFromObject(o), center=bounds.getCenter(new T.Vector3()), size=bounds.getSize(new T.Vector3());
+    const memberships=Object.keys(regions).filter(k=>{const r=regions[k];return center.x>=r.minX-.22&&center.x<=r.maxX+.22&&center.z>=r.minZ-.22&&center.z<=r.maxZ+.22;});
+    const materials=[];o.traverse(m=>{if(m.isMesh&&m.material){const list=Array.isArray(m.material)?m.material:[m.material];const copies=list.map(mat=>{const c=mat.clone();if(c.color)materials.push({mat:c,color:c.color.clone()});return c;});m.material=Array.isArray(m.material)?copies:copies[0];}});
+    return {o,bounds,center,size,memberships,materials};
+  });
+  const background=new T.Color(0x0b172b), day=new T.Color(0x9ec9ed);
+  let activeRegion='outside', previousRegion=null;
+  function applyView(p,running,camera){
+    activeRegion=running?regionAt(p.x,p.z):'outside';
+    const inside=activeRegion!=='outside';
+    scene.background.copy(inside?background:day);scene.fog.color.copy(inside?background:day);
+    const r=regions[activeRegion];
+    for(const v of visual){
+      const {o,bounds,center,size,memberships,materials}=v;
+      if(o===roof||corridorRoofs.includes(o))continue;
+      const active=memberships.includes(activeRegion);
+      if(activeRegion!==previousRegion){for(const {mat,color} of materials)mat.color.copy(color).multiplyScalar(inside&&!active?.12:1);}
+      o.visible=true;
+      if(!inside)continue;
+      // Mantém apenas piso/silhueta escura nos cômodos fora do foco.
+      if(!active){o.visible=size.y<.32&&bounds.max.y<.45;continue;}
+      const wall=size.y>2.25&&(size.x<.48||size.z<.48);
+      const overhead=bounds.min.y>3.3;
+      // Frente do cômodo em corte, preservando paredes laterais e do fundo.
+      const front=wall&&size.z<.48&&center.z>=r.maxZ-.55;
+      if(front||overhead){o.visible=false;continue;}
+      // Paredes que interceptam a linha de visão da câmera ao personagem.
+      if(wall&&camera){const target=new T.Vector3(p.x,1.35,p.z);const delta=target.clone().sub(camera.position);const length=delta.length();const ray=new T.Ray(camera.position,delta.normalize());const hit=ray.intersectBox(bounds,new T.Vector3());if(hit&&hit.distanceTo(camera.position)<length-.3)o.visible=false;}
+    }
+    previousRegion=activeRegion;
+    return activeRegion;
+  }
   return {
-    marks,
+    marks, applyView,
     update(p,dt,running,flags){
       const insideLobby = Math.abs(p.x) < 8.4 && Math.abs(p.z) < 7.2;
       roof.visible = !running || !insideLobby;
