@@ -95,11 +95,11 @@ function interact(){
   }
   if(near(world.marks.deskLeft,2.9) || near(world.marks.deskRight,2.9)){
     const d=createDialog('ATENDIMENTO', '<p>Olá! Bem-vindo ao Senac. Como posso ajudar?</p><button id="mat" style="padding:12px">Quero me matricular no curso de Assistente de Suporte e Manutenção de Computadores</button>');
-    if(state.enrolled){ d.querySelector('p').textContent='Sua matrícula no simulador já foi realizada. Siga à direita da recepção, passe pela cantina e siga pelo corredor oposto até a sala de TI.'; d.querySelector('#mat').textContent='Continuar'; d.querySelector('#mat').onclick=()=>closeDialog(d); return; }
+    if(state.enrolled){ d.querySelector('p').textContent='Sua matrícula no simulador já foi realizada. Siga à esquerda da recepção, no lado do bebedouro, passe pela cantina e siga até a sala de TI.'; d.querySelector('#mat').textContent='Continuar'; d.querySelector('#mat').onclick=()=>closeDialog(d); return; }
     d.querySelector('#mat').onclick=()=>{
       d.innerHTML='<b style="color:#f7941d">MATRÍCULA</b><form id="f"><p>Informe seu nome:</p><input id="name" required maxlength="60" minlength="2" style="font-size:16px;padding:10px;width:85%" placeholder="Nome do aluno"><p><button style="padding:10px">Confirmar matrícula</button></p></form>';
       const f=d.querySelector('#f'), input=d.querySelector('#name'); input.focus();
-      f.onsubmit=e=>{ e.preventDefault(); const name=input.value.trim(); if(name.length<2) return; state.studentName=name; state.enrolled=true; d.innerHTML='<b style="color:#f7941d">MATRÍCULA CONCLUÍDA</b><p>Bem-vindo, '+name+'! Sua matrícula simulada foi concluída. Siga pelo corredor à direita da recepção. Passe pela cantina e encontre a sala de TI no corredor do lado oposto.</p><p><button id="cont" style="padding:12px">Continuar</button></p>'; showMission('Matrícula concluída! Siga à direita, passe pela cantina e siga pelo corredor oposto até a sala de TI.'); d.querySelector('#cont').onclick=()=>closeDialog(d); };
+      f.onsubmit=e=>{ e.preventDefault(); const name=input.value.trim(); if(name.length<2) return; state.studentName=name; state.enrolled=true; d.innerHTML='<b style="color:#f7941d">MATRÍCULA CONCLUÍDA</b><p>Bem-vindo, '+name+'! Sua matrícula simulada foi concluída. Siga pelo corredor à esquerda da recepção, no lado do bebedouro. Passe pela cantina e encontre a sala de TI.</p><p><button id="cont" style="padding:12px">Continuar</button></p>'; showMission('Matrícula concluída! Siga à esquerda, no lado do bebedouro, passe pela cantina e encontre a sala de TI.'); d.querySelector('#cont').onclick=()=>closeDialog(d); };
     };
     return;
   }
@@ -114,7 +114,7 @@ window.addEventListener('resize',resize); if(window.ResizeObserver)new ResizeObs
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min((now-last)/1000,.05); last=now;
-  const p=player.g.position; if(state.enrolled && p.x>20.4 && p.x<29.6 && p.z>8 && p.z<17 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Explore o laboratório.');} world.update(p,dt,state.running,{greeted:state.greeted});
+  const p=player.g.position; if(state.enrolled && p.x>-29.6 && p.x<-20.4 && p.z>8 && p.z<17 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Explore o laboratório.');} world.update(p,dt,state.running,{greeted:state.greeted});
   if(state.running && !state.dialog){
     let inputX=(Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'))) + moveJoy.x;
     let inputZ=(Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'))) + moveJoy.y;
@@ -138,7 +138,7 @@ function frame(now){
     else if(state.greeted && !state.enrolled && (near(world.marks.deskLeft,2.9)||near(world.marks.deskRight,2.9))) hint.textContent=(mobile?'OK: falar no atendimento':'Pressione E para falar no atendimento');
     else hint.textContent=(mobile?'Joystick: andar · OK: interagir':'WASD / setas: andar · E: interagir');
   }
-  const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x>=9.25&&p.x<=34.2&&p.z>=-7.2&&p.z<=17.3)||(p.x>=-17.6&&p.x<=-9.25&&Math.abs(p.z)<=3.6));
+  const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x<=-9.25&&p.x>=-34.2&&p.z>=-7.2&&p.z<=17.3)||(p.x>=9.25&&p.x<=16.3&&p.z>=1.95&&p.z<=7.4));
   const camHeight=indoors?11.0:6.3, offX=0, offZ=indoors?10.5:state.camDist;
   const target = state.running ? new T.Vector3(p.x+offX, p.y+camHeight, p.z+offZ) : new T.Vector3(17,16,38);
   camera.position.lerp(target,1-Math.exp(-dt*6));
