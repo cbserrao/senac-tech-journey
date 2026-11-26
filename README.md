@@ -1,7 +1,9 @@
-# Senac Tech Journey — v0.7
+# Senac Tech Journey — protótipo 0.8
 
-- Detecção de dispositivos móveis (incluindo iPad).
-- Joystick de movimento e OK apenas no celular/tablet.
-- PC: WASD/setas e E.
-- Câmera fixa de acompanhamento, sem rotação manual.
-- Cenário e missões preservados.
+Melhorias visuais da v0.8:
+- personagens com roupas mais detalhadas
+- player com uniforme mais trabalhado
+- porteiro e atendentes com visual diferenciado
+- árvores com copas em camadas e arbustos
+- balcões e móveis com mais detalhes
+- monitores nos balcões e bebedouro aprimorado

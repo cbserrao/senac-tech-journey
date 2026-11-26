@@ -1,6 +1,6 @@
-/* Cenário v0.5 inspirado no Senac RR, com NPCs reposicionados, portas maiores e colisões. */
+/* Cenário v0.8 inspirado no Senac RR, com melhorias visuais em árvores, móveis e objetos. */
 window.criarCenarioTech = function(T, scene, box, walls, sign){
-  const blue=0x07529b, orange=0xf7941d, white=0xe7e5df, gray=0x9ea5ab;
+  const blue=0x07529b, orange=0xf7941d, white=0xe7e5df, gray=0x9ea5ab, dark=0x263747;
   const doorFrames=[];
   const gate={open:0, leaves:[]};
 
@@ -12,21 +12,50 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     return g;
   }
   function tile(w,d,x,z,c=0xe4e1d8){ return box(w,.06,d,x,.03,z,c); }
-  function chair(x,z){ box(.6,.1,.58,x,.52,z,blue); box(.1,.58,.58,x+.23,.81,z,blue); for(const dx of [-.19,.19]) for(const dz of [-.18,.18]) box(.05,.45,.05,x+dx,.24,z+dz,gray); addCollider(x,z,.62,.6); }
+
+  function shrub(x,z,s=1){ box(.9*s,.45,.9*s,x,.22,z,0x4b8a52); box(.65*s,.4,.65*s,x,.52,z,0x66a668); }
+  function tree(x,z,variant=0){
+    const trunkColor = variant%2 ? 0x7a5734 : 0x6d4c2c;
+    box(.34,2.2,.34,x,1.1,z,trunkColor);
+    box(.48,.38,.48,x,2.2,z,0x8a6a43);
+    box(1.45,1.05,1.45,x,2.65,z, variant%2 ? 0x4f9152 : 0x467e49);
+    box(1.15,.9,1.15,x,3.25,z, variant%2 ? 0x5da75f : 0x5b9958);
+    box(.82,.7,.82,x,3.85,z, variant%2 ? 0x75bd73 : 0x6eb36b);
+    box(1.05,.55,.62,x+.42,3.05,z+.12,0x5fa35d); box(1.0,.52,.6,x-.42,2.95,z-.1,0x5a9759);
+    shrub(x+.9,z+.9,.75); shrub(x-.85,z-.7,.62);
+  }
+
+  function chair(x,z){
+    box(.6,.1,.58,x,.5,z,0x1a4671);
+    box(.62,.12,.08,x,.95,z-.23,0x1d588e);
+    box(.08,.5,.08,x-.22,.73,z-.23,0x1d588e); box(.08,.5,.08,x+.22,.73,z-.23,0x1d588e);
+    for(const dx of [-.22,.22]) for(const dz of [-.18,.18]) box(.05,.45,.05,x+dx,.24,z+dz,gray);
+    addCollider(x,z,.62,.6);
+  }
+
+  function waitingChairRow(x,z,count=4){ for(let i=0;i<count;i++) chair(x+i*.95,z); }
+
+  function deskMonitor(x,y,z){ box(.58,.36,.1,x,y+.38,z,0x202a33); box(.48,.28,.02,x,y+.39,z+.06,0x4aa4c7); box(.12,.12,.12,x,y+.14,z,gray); box(.26,.03,.18,x,y+.02,z,0x2c343d); }
+
   function marbleDesk(w,h,d,x,y,z){
     const c=document.createElement('canvas'); c.width=128; c.height=128; const ctx=c.getContext('2d');
     ctx.fillStyle='#f9f7f0'; ctx.fillRect(0,0,128,128);
-    for(let i=0;i<12;i++){
+    for(let i=0;i<14;i++){
       ctx.strokeStyle = i%2 ? '#e5d5b9' : '#d8c6aa'; ctx.lineWidth = 1 + (i%3);
-      ctx.beginPath(); ctx.moveTo(-10, i*12+5); ctx.bezierCurveTo(30, i*14-10, 70, i*10+20, 138, i*12-15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-10, i*10+5); ctx.bezierCurveTo(30, i*12-10, 75, i*9+22, 138, i*11-15); ctx.stroke();
     }
     const tex=new T.CanvasTexture(c); tex.magFilter=T.NearestFilter; tex.colorSpace=T.SRGBColorSpace;
     const body=box(w,h,d,x,y,z,0xffffff); body.material.map=tex; body.material.color.set(0xffffff);
-    const top=box(w+.14,.12,d+.12,x,y+h/2+.06,z,0xffffff); top.material=body.material;
-    box(.55,.34,.12,x,y+h/2+.33,z-d/2-.02,0x263747); box(.12,.12,.15,x,y+h/2+.17,z-d/2-.02,gray);
-    addCollider(x,z,w+.2,d+.2);
+    const top=box(w+.18,.12,d+.18,x,y+h/2+.08,z,0xffffff); top.material=body.material;
+    // frente com faixa azul decorativa
+    box(w-.25,.18,.06,x,y+.12,z-d/2-.01,0x184f83);
+    box(w-.25,.08,.07,x,y+.29,z-d/2-.01,orange);
+    // base recuada
+    box(w-.45,h-.18,d-.18,x,y-.02,z,0xf0ebe0);
+    addCollider(x,z,w+.22,d+.22);
     return body;
   }
+
   function pavilion(x,z){
     const base=new T.Mesh(new T.CylinderGeometry(3.2,3.2,4.2,16), new T.MeshLambertMaterial({color:white}));
     base.position.set(x,2.1,z); scene.add(base); addCollider(x,z,6.1,6.1);
@@ -58,8 +87,9 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   for(let z=9;z<=25;z+=4){ for(const s of [-1,1]) box(.18,4.2,.18,s*2.15,2.1,z,white); box(4.7,.22,3.6,0,4.26,z,blue); }
   box(5.2,.7,.4,0,4.45,26.9,blue); sign('SENAC',0,4.46,27.11,4.4,.72);
 
-  // Árvores
-  for(const [x,z] of [[-7,22],[7,22],[-9,15],[9,15],[-10,8],[10,8],[-16,18],[16,18]]){ box(.34,2.6,.34,x,1.3,z,0x785936); box(2.2,2.4,2.2,x,3,z,0x3b7541); }
+  // Árvores e paisagismo melhorados
+  [[-7,22,0],[7,22,1],[-9,15,1],[9,15,0],[-10,8,0],[10,8,1],[-16,18,1],[16,18,0]].forEach(v=>tree(v[0],v[1],v[2]));
+  [[-4,24],[4,24],[-13,11],[13,11],[-18,22],[18,22]].forEach(v=>shrub(v[0],v[1],.95));
 
   // Guarita/portaria
   tile(4.5,4,-5.9,23,0xe1ddd0);
@@ -70,7 +100,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   glass(1.4,2.6,.08,-3.55,1.5,22.95);
   box(4.8,.2,4.1,-5.9,4.55,23,blue); box(5,.24,4.3,-5.9,4.8,23,orange);
   sign('PORTARIA',-5.9,4.15,25.11,2.8,.46);
-  marbleDesk(1.35,.95,.7,-5.65,.5,23.2);
+  marbleDesk(1.35,.95,.7,-5.65,.5,23.2); deskMonitor(-5.65,.5,23.35);
 
   // Portão/cancela
   for(const s of [-1,1]){ const g=new T.Group(); g.position.set(s*.55,0,21.2); scene.add(g); box(1.05,2.4,.08,0,1.3,0,0xd3d8dc,g); box(.07,2.48,.1,0.5,1.3,0,gray,g); box(.07,2.48,.1,-0.5,1.3,0,gray,g); gate.leaves.push(g); }
@@ -101,12 +131,9 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   // Portas principais maiores e mais integradas às paredes
   function doubleDoor(z, label){
     const leaves=[];
-    // paredes laterais mais próximas da abertura
     solid(3.45,recH,.24,-5.0,recH/2,z,white);
     solid(3.45,recH,.24, 5.0,recH/2,z,white);
-    // moldura da abertura
     box(.32,3.9,.28,-1.72,1.95,z,white); box(.32,3.9,.28,1.72,1.95,z,white); box(3.75,.34,.28,0,3.76,z,white);
-    // folhas
     const baseX=.82, openDist=1.45;
     for(const s of [-1,1]){
       const g=new T.Group(); scene.add(g); g.position.set(s*baseX,0,z);
@@ -124,30 +151,28 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   doubleDoor(-8,'');
 
   // Balcões e objetos
-  marbleDesk(3.8,1.08,1.05,-5.2,.56,-2.2);
-  marbleDesk(3.8,1.08,1.05, 5.2,.56,-2.2);
-  for(let i=0;i<4;i++){ chair(-6.6+i*.95,3.8); chair(3.8+i*.95,3.8); }
-  box(.58,1.18,.48,-8.0,.6,3.35,0xe4e8ea); box(.38,.35,.38,-8.0,1.35,3.35,0x73b5d2); box(.24,.12,.03,-8.0,.86,3.57,0x40596b); addCollider(-8.0,3.35,.6,.5);
+  marbleDesk(3.8,1.08,1.05,-5.2,.56,-2.2); deskMonitor(-5.2,.56,-1.95);
+  marbleDesk(3.8,1.08,1.05, 5.2,.56,-2.2); deskMonitor(5.2,.56,-1.95);
+  waitingChairRow(-6.6,3.8,4); waitingChairRow(3.8,3.8,4);
+  // bebedouro mais detalhado
+  box(.58,1.18,.48,-8.0,.6,3.35,0xe4e8ea); box(.4,.3,.4,-8.0,1.38,3.35,0x73b5d2); box(.24,.12,.03,-8.0,.86,3.57,dark); box(.18,.05,.14,-8.0,1.58,3.35,0xf4f8fb); box(.3,.07,.3,-8.0,.04,3.35,0xc4cad0); addCollider(-8.0,3.35,.6,.5);
 
   // Sala lateral visível pelo vidro
   tile(7.2,8,12.8,2.5,0xded9cf);
-  for(const x of [11.3,14.0]){ box(1.8,.12,1,x,.82,3.2,0xc1a77d); for(const dx of [-.72,.72]) box(.08,.8,.08,x+dx,.4,3.2,gray); box(.7,.45,.14,x,1.12,3.0,0x263747); addCollider(x,3.2,1.8,1); }
+  for(const x of [11.3,14.0]){ box(1.8,.12,1,x,.82,3.2,0xc1a77d); for(const dx of [-.72,.72]) box(.08,.8,.08,x+dx,.4,3.2,gray); box(.7,.45,.14,x,1.12,3.0,dark); addCollider(x,3.2,1.8,1); }
   solid(7.8,recH,.2,12.8,recH/2,6.6,white); solid(.2,recH,8,16.6,recH/2,2.6,white);
 
   tile(4,9,-12.8,-8.5,0xe0ddcf); tile(4,9,12.8,-8.5,0xe0ddcf);
 
-  // Pontos de interação / NPCs
   const marks = {
-    doorman:{x:-3.0,z:23.3},     // fora da cabine
-    deskLeft:{x:-5.2,z:-3.25},   // atrás do balcão
-    deskRight:{x:5.2,z:-3.25},   // atrás do balcão
+    doorman:{x:-3.0,z:23.3},
+    deskLeft:{x:-5.2,z:-3.25},
+    deskRight:{x:5.2,z:-3.25},
     lobby:{x:0,z:0}
   };
 
-  // Massa externa do prédio
   for(const x of [-20,-12,12,20]) for(const z of [-11,-3,9,17]){ if(x===12&&z===-3) continue; pavilion(x,z); }
 
-  // cobertura central
   const roof = new T.Group(); scene.add(roof);
   const cap = new T.Mesh(new T.SphereGeometry(1,20,8,0,Math.PI*2,0,Math.PI/2), new T.MeshLambertMaterial({color:0x205a92,flatShading:true}));
   cap.scale.set(9.3,3.2,8.3); cap.position.y=5.8; roof.add(cap);
