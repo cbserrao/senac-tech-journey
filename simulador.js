@@ -6,11 +6,28 @@ document.body.append(root);
 const scene=new T.Scene(); scene.background=new T.Color(0x9ec9ed); scene.fog=new T.Fog(0x9ec9ed,45,95);
 const camera=new T.PerspectiveCamera(48,1,.1,140), renderer=new T.WebGLRenderer({antialias:false});
 renderer.domElement.style.cssText='width:100%;height:100%;image-rendering:pixelated;display:block'; root.append(renderer.domElement);
-const ambient=new T.HemisphereLight(0xffffff,0x778599,2); scene.add(ambient); const sun=new T.DirectionalLight(0xffefd2,2.15); sun.position.set(-10,16,12); scene.add(sun);
-function box(w,h,d,x,y,z,c,parent=scene){const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshLambertMaterial({color:c})); m.position.set(x,y,z); parent.add(m); return m; }
+// Sombras e reflexos: mapa de sombra localizado e ambiente refletido procedural.
+const compactGraphics=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)|| (navigator.maxTouchPoints>1 && innerWidth<1100);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.outputColorSpace=T.SRGBColorSpace;
+const ambient=new T.HemisphereLight(0xffffff,0x778599,1.4); scene.add(ambient);
+const sun=new T.DirectionalLight(0xffefd2,2.15); scene.add(sun,sun.target);
+sun.castShadow=true; sun.shadow.mapSize.set(compactGraphics?512:1024,compactGraphics?512:1024);
+Object.assign(sun.shadow.camera,{left:-17,right:17,top:17,bottom:-17,near:.5,far:65});
+sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias=-.00035; sun.shadow.normalBias=.035;
+// Cubemap sintético: painéis claros, céu e chão. Não exige imagens externas.
+function reflectionMap(){const faces=Array.from({length:6},(_,i)=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const grad=g.createLinearGradient(0,0,0,128);grad.addColorStop(0,i===2?'#eef6ff':'#91abc1');grad.addColorStop(.55,'#64788a');grad.addColorStop(1,'#303943');g.fillStyle=grad;g.fillRect(0,0,128,128);if(i!==3){g.fillStyle='#e9f3ff';g.fillRect(12,14,30,67);g.fillStyle='#b9d3e5';g.fillRect(75,10,35,46);}return c;});const tex=new T.CubeTexture(faces);tex.colorSpace=T.SRGBColorSpace;tex.needsUpdate=true;return tex;}
+const reflectedEnvironment=reflectionMap();
+const metallicColors=new Set([0x9ea5ab,0x9aa5ab,0xaeb9c3,0xc1ccd3,0xaab7c0,0x93a8b3,0xcfd7dc,0x748592,0x687782,0xc0c9d0]);
+const woodColors=new Set([0xc1a77d,0xc5a67d,0xb67d48,0xa77d56]);
+function surfaceMaterial(c,w,h,d){const floor=h<=.08&&w>.5&&d>.5;const metal=metallicColors.has(c);const wood=woodColors.has(c);return new T.MeshPhongMaterial({color:c,shininess:metal?85:floor?45:wood?25:18,specular:metal?0xaaaaaa:floor?0x393939:0x252525,envMap:metal||floor?reflectedEnvironment:null,reflectivity:metal?.28:floor?.075:0});}
+function box(w,h,d,x,y,z,c,parent=scene){const m=new T.Mesh(new T.BoxGeometry(w,h,d),surfaceMaterial(c,w,h,d));m.position.set(x,y,z);m.castShadow=h>.12&&!(h<.25&&w>4&&d>4);m.receiveShadow=true;parent.add(m);return m;}
+function configureSurfaces(root){root.traverse(m=>{if(!m.isMesh)return;const mat=m.material;if(mat.isMeshBasicMaterial){m.castShadow=false;m.receiveShadow=false;return;}m.receiveShadow=true;if(mat.transparent){m.castShadow=false;mat.envMap=reflectedEnvironment;mat.reflectivity=.24;mat.shininess=110;mat.specular=new T.Color(0xc5e4ff);mat.needsUpdate=true;}else if(!m.geometry.parameters||!('width' in m.geometry.parameters)){m.castShadow=true;}});}
+
 const walls=[];
 function sign(txt,x,y,z,w,h){const c=document.createElement('canvas'); c.width=512; c.height=128; const ctx=c.getContext('2d'); ctx.fillStyle='#07529b'; ctx.fillRect(0,0,512,128); ctx.fillStyle='#fff'; ctx.font='bold 70px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,256,64); const tex=new T.CanvasTexture(c); tex.magFilter=T.NearestFilter; const m=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex,transparent:true})); m.position.set(x,y,z); scene.add(m); return m; }
 const world=window.criarCenarioTech(T,scene,box,walls,sign);
+configureSurfaces(scene);
 
 function detailedPerson(x,z,style){
   const g=new T.Group(); g.position.set(x,.1,z); scene.add(g);
@@ -60,7 +77,7 @@ const tableNpc1=detailedPerson(-31.2,-4.7,{shirt:0x4d89c7,pants:0x2c3c51,shoes:0
 const tableNpc2=detailedPerson(-31.2,4.9,{shirt:0x7b4aa8,pants:0x2c3c51,shoes:0x212832,hair:0x2e241c,accent:0xffffff});
 canteenNpc1.g.rotation.y=-Math.PI/2; canteenNpc2.g.rotation.y=-Math.PI/2; tableNpc1.g.rotation.y=1.2; tableNpc2.g.rotation.y=1.2;
 sodaCan(-30.18,1.22,-4.9); burger(-30.55,1.13,-4.66); sodaCan(-30.18,1.22,4.7); burger(-30.55,1.13,4.96);
-const guideArrow=floatingArrow();
+const guideArrow=floatingArrow();guideArrow.traverse(m=>{if(m.isMesh){m.castShadow=false;m.receiveShadow=false;}});
 const receptionNpcs=[npc,npc2], patioNpcs=[canteenNpc1,canteenNpc2,tableNpc1,tableNpc2], outsideNpcs=[doorman];
 
 
@@ -244,7 +261,10 @@ function frame(now){
   camera.position.lerp(target,1-Math.exp(-dt*6));
   camera.lookAt(state.running?p.x:0, state.running?1.6:2.5, state.running?p.z:14);
   const zone=world.applyView(p,state.running,camera);
-  const inside=zone!=='outside'; ambient.intensity=T.MathUtils.lerp(ambient.intensity,inside?1.3:2,1-Math.exp(-dt*5)); sun.intensity=T.MathUtils.lerp(sun.intensity,inside?.45:2.15,1-Math.exp(-dt*5));
+  const inside=zone!=='outside';
+  ambient.intensity=T.MathUtils.lerp(ambient.intensity,inside?.72:1.15,1-Math.exp(-dt*5));
+  sun.visible=!inside; sun.target.position.set(p.x,0,p.z);sun.position.set(p.x-12,20,p.z+10);sun.target.updateMatrixWorld();
+  world.updateShadowLight(p,zone,dt,compactGraphics);
   for(const n of outsideNpcs) n.g.visible = (zone==='outside');
   for(const n of receptionNpcs) n.g.visible = (zone==='reception');
   for(const n of patioNpcs) n.g.visible = (zone==='patio'); professor.g.visible=zone==='ti';

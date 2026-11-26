@@ -3,11 +3,30 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   const blue=0x07529b, orange=0xf7941d, white=0xe7e5df, gray=0x9ea5ab, dark=0x263747;
   const doorFrames=[];
   const localLights=[];
+  // Um único mapa de sombra interno, reutilizado entre as luminárias.
+  const shadowLamp=new T.SpotLight(0xe2efff,0,18,Math.PI/3,.55,2);
+  shadowLamp.castShadow=true;shadowLamp.visible=false;shadowLamp.shadow.bias=-.00025;shadowLamp.shadow.normalBias=.025;
+  shadowLamp.shadow.camera.near=.18;shadowLamp.shadow.camera.far=18;
+  scene.add(shadowLamp,shadowLamp.target);
+  let selectedLamp=null,shadowConfigured=false;
+  function updateShadowLight(p,zone,dt,compact){
+    if(!shadowConfigured){const res=compact?512:1024;shadowLamp.shadow.mapSize.set(res,res);shadowConfigured=true;}
+    if(zone==='outside'){shadowLamp.visible=false;selectedLamp=null;return;}
+    const candidates=localLights.filter(e=>e.zone===zone);
+    if(!candidates.length){shadowLamp.visible=false;selectedLamp=null;return;}
+    const dist=e=>Math.hypot(e.l.position.x-p.x,e.l.position.z-p.z);
+    const best=candidates.reduce((a,b)=>dist(a)<dist(b)?a:b);
+    if(!selectedLamp||selectedLamp.zone!==zone||dist(best)+.8<dist(selectedLamp))selectedLamp=best;
+    const pos=selectedLamp.l.position;
+    shadowLamp.position.copy(pos);shadowLamp.target.position.set(pos.x,0,pos.z);shadowLamp.target.updateMatrixWorld();
+    shadowLamp.color.copy(selectedLamp.l.color);shadowLamp.intensity=selectedLamp.power*1.65;shadowLamp.visible=true;
+    selectedLamp.l.intensity=selectedLamp.power*.22;
+  }
   function lamp(x,y,z,zone,warm=false,kind="panel"){
     const fixture=box(kind==="panel"?1.5:.55,.13,kind==="panel"?.55:.55,x,y,z,0x39495a);
     const lens=box(kind==="panel"?1.38:.46,.045,kind==="panel"?.43:.46,x,y-.09,z,0xffffff);
     lens.material=new T.MeshBasicMaterial({color:warm?0xffe4ad:0xe5f5ff});
-    fixture.userData.lightFixture=lens.userData.lightFixture=zone;
+    fixture.userData.lightFixture=lens.userData.lightFixture=zone;fixture.castShadow=false;lens.castShadow=false;
     const l=new T.PointLight(warm?0xffd6a0:0xe2efff,0,12,2); l.position.set(x,y-.32,z); scene.add(l); localLights.push({l,zone,power:warm?32:38});
   }
   const gate={open:0, leaves:[]};
@@ -354,7 +373,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     const inside=activeRegion!=='outside';
     scene.background.copy(inside?background:day);scene.fog.color.copy(inside?background:day);
     const r=regions[activeRegion];
-    for(const {l,zone,power} of localLights){l.intensity=zone===activeRegion?power:0;l.visible=zone===activeRegion;}
+    for(const {l,zone,power} of localLights){l.intensity=zone===activeRegion?power*(activeRegion==='outside'?1:.65):0;l.visible=zone===activeRegion;}
     for(const v of visual){
       const {o,bounds,center,size,memberships,materials}=v;
       if(o===roof||corridorRoofs.includes(o)){if(inside)o.visible=false;continue;}
@@ -379,7 +398,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     return activeRegion;
   }
   return {
-    marks, applyView,
+    marks, applyView, updateShadowLight,
     update(p,dt,running,flags){
       const insideLobby = Math.abs(p.x) < 8.4 && Math.abs(p.z) < 7.2;
       roof.visible = !running || !insideLobby;
