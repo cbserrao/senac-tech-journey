@@ -149,7 +149,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
       leaves.push(g);
     }
     box(3.85,.18,.26,0,3.55,z,blue);
-    if(label) sign(label,0,4.75,z+0.22,4.9,.56);
+    if(label){ const labelSign=sign(label,0,4.95,z+0.22,5.2,.62); labelSign.userData.alwaysVisible=true; }
     doorFrames.push({z,leaves,open:0,baseX,openDist,blockHalf:1.72});
   }
   doubleDoor(8,'ATENDIMENTO');
@@ -181,35 +181,48 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   solid(.75,1.15,5.6,-23.5,.58,0,0xe8dcc6); box(.91,.12,5.8,-23.5,1.2,0,white);
   for(const z of [-1.8,-.9,0,.9,1.8]) {box(.36,.15,.42,-23.5,1.32,z,0xc68a42); box(.32,.14,.35,-23.5,1.46,z,0xe8bb73);}
   box(.08,.65,2.2,-23.05,1.58,0,0x8ac6dc).material=new T.MeshPhongMaterial({color:0xaedced,transparent:true,opacity:.35});
-  box(5.4,.2,6.4,-26,3.7,0,blue); const cs=sign('CANTINA',-23.2,3.25,0,4,.6); cs.rotation.y=Math.PI/2;
+  box(5.4,.2,6.4,-26,3.7,0,blue); const cs=sign('CANTINA',-23.35,4.45,0,5.2,.78); cs.rotation.y=Math.PI/2; cs.userData.alwaysVisible=true;
+  // Objetos de cozinha da cantina.
+  box(.95,1.85,.85,-27.2,.93,-1.9,0x9aa5ab); box(.75,.28,.72,-27.2,1.88,-1.9,0xd9e1e5);
+  box(1.15,.9,.72,-26.7,.45,1.95,0xb98155); box(1.15,.12,.72,-26.7,.96,1.95,0x505860); box(.38,.07,.38,-26.96,1.03,1.86,0x212a33); box(.38,.07,.38,-26.44,1.03,2.05,0x212a33);
+  box(.9,.8,.62,-26.45,.42,.55,0xcfd7dc); box(.6,.07,.44,-26.45,.84,.55,0x8aa5b3); box(.12,.15,.12,-26.73,.94,.55,0xe7f4fb);
+  box(.68,.52,.48,-26.85,1.48,-.25,0x434a52); box(.5,.26,.42,-26.85,1.49,-.23,0x1c2329);
+  for(const z of [-1.5,-.5,.5,1.5]){ box(.17,.34,.17,-23.5,1.38,z,0xd9e1e5); box(.19,.02,.19,-23.5,1.56,z,0xc33a39); }
   // Duas mesas redondas no pátio, com circulação nos lados.
-  for(const z of [-4.8,4.8]){const m=new T.Mesh(new T.CylinderGeometry(.75,.75,.12,12),new T.MeshLambertMaterial({color:0xc5a67d}));m.position.set(-30.4,.87,z);scene.add(m);box(.18,.8,.18,-30.4,.4,z,gray);addCollider(-30.4,z,1.5,1.5);chair(-31.8,z);}
-  // Sala de TI no lado oposto do pátio (Z positivo), agora no bloco esquerdo.
-  tile(10,10,-25,12,0xded9cf);
-  for(const x of [-20,-30]) solid(.22,4.7,10,x,2.35,12,white);
-  solid(10,4.7,.22,-25,2.35,17,white);
-  for(const x of [-21.5,-28.5]) solid(3,4.7,.22,x,2.35,7,white);
-  box(4,1.6,.22,-25,3.9,7,white); const tiSign=sign('SALA DE TI',-25,3.9,6.86,3.7,.55); tiSign.rotation.y=Math.PI; tiSign.material.side=T.DoubleSide;
-  for(const x of [-22.35,-27.65]) for(const z of [10.7,14.0]) {
-    solid(3.0,.15,1.25,x,1.02,z,0xc1a77d);
-    for(const dx of [-1.32,1.32]) for(const dz of [-.48,.48]) box(.12,.96,.12,x+dx,.48,z+dz,dark);
-    box(.95,.62,.12,x+.25,1.55,z-.28,dark);box(.82,.48,.025,x+.25,1.55,z-.205,0x15283d);
-    box(.13,.2,.14,x+.25,1.19,z-.28,gray);box(.4,.045,.32,x+.25,1.12,z-.23,dark);
-    box(.7,.055,.28,x+.25,1.12,z+.28,dark);for(let k=0;k<7;k++)box(.065,.008,.18,x-.15+k*.09,1.153,z+.28,0x52616e);
-    box(.15,.065,.23,x-.85,1.12,z+.28,0x25313d);
-    box(.48,.86,.72,x-1.02,1.53,z-.05,0x263747);box(.4,.79,.035,x-1.02,1.53,z+.32,0x17232e);
-    box(.12,.045,.04,x-1.02,1.8,z+.35,0x69c78c);for(let k=0;k<4;k++)box(.29,.035,.04,x-1.02,1.2+k*.085,z+.35,0x445566);
-    chair(x+.25,z+1.13);
+  for(const z of [-4.8,4.8]){const m=new T.Mesh(new T.CylinderGeometry(.75,.75,.12,12),new T.MeshLambertMaterial({color:0xc5a67d}));m.position.set(-30.4,.87,z);scene.add(m);box(.18,.8,.18,-30.4,.4,z,gray);addCollider(-30.4,z,1.5,1.5);chair(-31.8,z); box(.16,.28,.16,-30.2,1.08,z-.1,0xd9e1e5); box(.18,.02,.18,-30.2,1.22,z-.1,0xc53f3b); box(.32,.08,.28,-30.58,1.0,z+.15,0xe8bb73); box(.26,.12,.22,-30.58,1.08,z+.15,0x7d4c28); box(.32,.05,.28,-30.58,1.15,z+.15,0xe8bb73);}
+  // Sala de TI ampliada com 10 bancadas.
+  tile(20,16,-25,15,0xded9cf);
+  for(let x=-34.4;x<-15.3;x++) for(let z=7.6;z<22.7;z++) box(.97,.018,.97,x,.074,z,(Math.floor(x+z)%2)?0xe5e2d9:0xd9d8cf);
+  solid(.22,4.9,16,-34.9,2.45,15,white); solid(.22,4.9,16,-15.1,2.45,15,white);
+  solid(20,4.9,.22,-25,2.45,23.1,white);
+  solid(5.8,4.9,.22,-31.8,2.45,7,white); solid(5.8,4.9,.22,-18.2,2.45,7,white);
+  box(7.4,1.9,.22,-25,4.22,7,white); const tiSign=sign('SALA DE TI',-25,4.25,6.86,6.4,.85); tiSign.rotation.y=Math.PI; tiSign.material.side=T.DoubleSide; tiSign.userData.alwaysVisible=true;
+  const tiSpots=[];
+  for(const x of [-31.2,-27.5,-23.8,-20.1,-16.9]) for(const z of [11.1,15.5]) {
+    tiSpots.push({x,z});
+    solid(2.7,.15,1.25,x,1.02,z,0xc1a77d);
+    for(const dx of [-1.18,1.18]) for(const dz of [-.48,.48]) box(.12,.96,.12,x+dx,.48,z+dz,dark);
+    box(.9,.58,.12,x+.22,1.53,z-.28,dark);box(.78,.45,.025,x+.22,1.53,z-.205,0x15283d);
+    box(.13,.2,.14,x+.22,1.19,z-.28,gray);box(.38,.045,.3,x+.22,1.12,z-.23,dark);
+    box(.64,.055,.26,x+.22,1.12,z+.25,dark);for(let k=0;k<7;k++)box(.06,.008,.17,x-.05+k*.08,1.153,z+.25,0x52616e);
+    box(.14,.06,.22,x+.72,1.12,z+.25,0x25313d);
+    box(.46,.82,.7,x-.92,1.5,z-.02,0x263747);box(.38,.76,.035,x-.92,1.5,z+.31,0x17232e);
+    box(.12,.045,.04,x-.92,1.76,z+.34,0x69c78c);for(let k=0;k<4;k++)box(.28,.035,.04,x-.92,1.18+k*.082,z+.34,0x445566);
+    chair(x+.18,z+1.1);
   }
-  box(5,1.7,.12,-25,2.6,16.85,0xf5f5ef);box(5.15,.08,.16,-25,1.71,16.8,gray);
-  solid(2.8,.15,1.05,-25,1.02,16.0,0xc1a77d);for(const dx of [-1.2,1.2])for(const dz of [-.4,.4])box(.12,.95,.12,-25+dx,.48,16+dz,dark);deskMonitor(-25,1.1,16);
+  box(7,1.85,.12,-25,2.75,22.5,0xf5f5ef);box(7.2,.08,.16,-25,1.81,22.42,gray);
+  solid(3.4,.15,1.1,-25,1.02,21.0,0xc1a77d);for(const dx of [-1.45,1.45])for(const dz of [-.42,.42])box(.12,.95,.12,-25+dx,.48,21+dz,dark);deskMonitor(-25,1.1,21.0);
   tile(4,9,-12.8,-8.5,0xe0ddcf);
 
   const marks = {
     doorman:{x:-3.0,z:23.3},
     deskLeft:{x:-5.2,z:-3.25},
     deskRight:{x:5.2,z:-3.25},
-    lobby:{x:0,z:0}
+    lobby:{x:0,z:0},
+    corridorEntry:{x:-9.6,z:0},
+    patio:{x:-23.5,z:0},
+    tiDoor:{x:-25,z:7.8},
+    tiSeat:{x:-23.62,z:16.62}
   };
 
   for(const x of [-20,-12,12,20]) for(const z of [-11,-3,9,17]){ if(x<0 && (z<10 || x===-20)) continue; pavilion(x,z); }
@@ -234,7 +247,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     reception:{minX:-9.25,maxX:9.25,minZ:-8.25,maxZ:8.25},
     corridor:{minX:-19.1,maxX:-9.25,minZ:-3.6,maxZ:3.6},
     patio:{minX:-34.2,maxX:-19.1,minZ:-7.2,maxZ:7.2},
-    ti:{minX:-30.2,maxX:-19.8,minZ:7.2,maxZ:17.3},
+    ti:{minX:-35.2,maxX:-14.8,minZ:7.2,maxZ:23.3},
     side:{minX:9.25,maxX:16.3,minZ:1.95,maxZ:7.4}
   };
   const regionAt=(x,z)=>Object.keys(regions).find(k=>{const r=regions[k];return x>=r.minX&&x<=r.maxX&&z>=r.minZ&&z<=r.maxZ;})||'outside';
@@ -255,6 +268,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     for(const v of visual){
       const {o,bounds,center,size,memberships,materials}=v;
       if(o===roof||corridorRoofs.includes(o))continue;
+      if(o.userData && o.userData.alwaysVisible){ o.visible=true; continue; }
       const active=memberships.includes(activeRegion);
       if(activeRegion!==previousRegion){for(const {mat,color} of materials)mat.color.copy(color).multiplyScalar(inside&&!active?.12:1);}
       o.visible=true;

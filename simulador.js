@@ -44,13 +44,27 @@ function detailedPerson(x,z,style){
   return {g,legs,arms};
 }
 
+function sodaCan(x,y,z,parent=scene){ box(.16,.28,.16,x,y,z,0xdce4ea,parent); box(.18,.02,.18,x,y+.15,z,0xc53f3b,parent); }
+function burger(x,y,z,parent=scene){ box(.32,.08,.28,x,y,z,0xe8bb73,parent); box(.24,.11,.2,x,y+.08,z,0x7c4a27,parent); box(.32,.04,.28,x,y+.15,z,0xe8bb73,parent); }
+function floatingArrow(){ const g=new T.Group(); scene.add(g); const shaft=box(.12,.75,.12,0,.42,0,0xffd34a,g); const head=new T.Mesh(new T.ConeGeometry(.34,.52,4),new T.MeshLambertMaterial({color:0xffd34a})); head.position.y=1.0; head.rotation.y=Math.PI/4; g.add(head); const ring=new T.Mesh(new T.TorusGeometry(.3,.05,6,12),new T.MeshLambertMaterial({color:0xfff0a5})); ring.rotation.x=Math.PI/2; ring.position.y=.05; g.add(ring); g.visible=false; return g; }
+
 const player=detailedPerson(0,31,{shirt:0xf7941d,pants:0x274564,shoes:0x1d232d,hair:0x3b2a1e,accent:0x102849,badge:true});
 const doorman=detailedPerson(world.marks.doorman.x, world.marks.doorman.z,{shirt:0x164d7d,pants:0x23364d,shoes:0x18202a,hair:0x222015,accent:0xf7d25c,badge:true,cap:true});
 const npc=detailedPerson(world.marks.deskLeft.x, world.marks.deskLeft.z,{shirt:0x0f4d92,pants:0x24374f,shoes:0x1d232d,hair:0x31241b,accent:0xffffff,badge:true,tie:true});
 const npc2=detailedPerson(world.marks.deskRight.x, world.marks.deskRight.z,{shirt:0x0f4d92,pants:0x24374f,shoes:0x1d232d,hair:0x4a2f22,accent:0xffffff,badge:true,tie:true});
 doorman.g.rotation.y = 1.9; npc.g.rotation.y=0; npc2.g.rotation.y=0;
 
-const state={running:false, dialog:false, greeted:false, enrolled:false, studentName:'', camDist:8.2};
+const canteenNpc1=detailedPerson(-26.6,-.8,{shirt:0xffffff,pants:0x263a52,shoes:0x1d232d,hair:0x302015,accent:0xf7941d,badge:true,cap:true});
+const canteenNpc2=detailedPerson(-26.2,1.2,{shirt:0xffffff,pants:0x263a52,shoes:0x1d232d,hair:0x4a2f22,accent:0xf7941d,badge:true});
+const tableNpc1=detailedPerson(-31.2,-4.7,{shirt:0x4d89c7,pants:0x2c3c51,shoes:0x212832,hair:0x38291f,accent:0xffffff});
+const tableNpc2=detailedPerson(-31.2,4.9,{shirt:0x7b4aa8,pants:0x2c3c51,shoes:0x212832,hair:0x2e241c,accent:0xffffff});
+canteenNpc1.g.rotation.y=-Math.PI/2; canteenNpc2.g.rotation.y=-Math.PI/2; tableNpc1.g.rotation.y=1.2; tableNpc2.g.rotation.y=1.2;
+sodaCan(-30.18,1.22,-4.9); burger(-30.55,1.13,-4.66); sodaCan(-30.18,1.22,4.7); burger(-30.55,1.13,4.96);
+const guideArrow=floatingArrow();
+const receptionNpcs=[npc,npc2], patioNpcs=[canteenNpc1,canteenNpc2,tableNpc1,tableNpc2], outsideNpcs=[doorman];
+
+
+const state={running:false, dialog:false, greeted:false, enrolled:false, arrivedTI:false, satTI:false, studentName:'', camDist:8.2};
 const keys=new Set(); let last=performance.now(), walk=0;
 let moveJoy={x:0,y:0,active:false};
 const mobile = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -93,6 +107,13 @@ function interact(){
     d.querySelector('#gd').onclick=()=>{ state.greeted=true; d.innerHTML='<b style="color:#f7941d">PORTEIRO</b><p>Perfeito! Entrada liberada. Siga pelo corredor até o atendimento para realizar sua matrícula.</p><p><button id="ok" style="padding:12px">Continuar</button></p>'; showMission('Entre no prédio, vá ao atendimento e realize sua matrícula.'); d.querySelector('#ok').onclick=()=>closeDialog(d); };
     return;
   }
+  if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0)){
+    state.satTI=true; player.g.position.set(world.marks.tiSeat.x,.1,world.marks.tiSeat.z); player.g.rotation.y=Math.PI;
+    const d=createDialog('SALA DE TI','<p>Muito bem! Você encontrou sua bancada e sentou para iniciar a aula prática.</p><p><button id="sitok" style="padding:12px">Continuar</button></p>');
+    showMission('Perfeito! Você já está na bancada. Agora vamos iniciar a aula de componentes do computador.');
+    d.querySelector('#sitok').onclick=()=>closeDialog(d);
+    return;
+  }
   if(near(world.marks.deskLeft,2.9) || near(world.marks.deskRight,2.9)){
     const d=createDialog('ATENDIMENTO', '<p>Olá! Bem-vindo ao Senac. Como posso ajudar?</p><button id="mat" style="padding:12px">Quero me matricular no curso de Assistente de Suporte e Manutenção de Computadores</button>');
     if(state.enrolled){ d.querySelector('p').textContent='Sua matrícula no simulador já foi realizada. Siga à esquerda da recepção, no lado do bebedouro, passe pela cantina e siga até a sala de TI.'; d.querySelector('#mat').textContent='Continuar'; d.querySelector('#mat').onclick=()=>closeDialog(d); return; }
@@ -114,7 +135,7 @@ window.addEventListener('resize',resize); if(window.ResizeObserver)new ResizeObs
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min((now-last)/1000,.05); last=now;
-  const p=player.g.position; if(state.enrolled && p.x>-29.6 && p.x<-20.4 && p.z>8 && p.z<17 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Explore o laboratório.');} world.update(p,dt,state.running,{greeted:state.greeted});
+  const p=player.g.position; if(state.enrolled && p.x>-35.0 && p.x<-15.0 && p.z>8 && p.z<22.5 && !state.arrivedTI){state.arrivedTI=true;showMission('Você chegou à sala de TI! Vá até a mesa destacada e pressione E para sentar.');} world.update(p,dt,state.running,{greeted:state.greeted});
   if(state.running && !state.dialog){
     let inputX=(Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft'))) + moveJoy.x;
     let inputZ=(Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'))) + moveJoy.y;
@@ -136,15 +157,29 @@ function frame(now){
     }
     if(!state.greeted && near(world.marks.doorman,2.3)) hint.textContent=(mobile?'OK: falar com o porteiro':'Pressione E para falar com o porteiro');
     else if(state.greeted && !state.enrolled && (near(world.marks.deskLeft,2.9)||near(world.marks.deskRight,2.9))) hint.textContent=(mobile?'OK: falar no atendimento':'Pressione E para falar no atendimento');
+    else if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?'OK: sentar na bancada':'Pressione E para sentar na bancada');
     else hint.textContent=(mobile?'Joystick: andar · OK: interagir':'WASD / setas: andar · E: interagir');
   }
-  const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x<=-9.25&&p.x>=-34.2&&p.z>=-7.2&&p.z<=17.3)||(p.x>=9.25&&p.x<=16.3&&p.z>=1.95&&p.z<=7.4));
+  const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x<=-9.25&&p.x>=-35.2&&p.z>=-7.2&&p.z<=23.3)||(p.x>=9.25&&p.x<=16.3&&p.z>=1.95&&p.z<=7.4));
   const camHeight=indoors?11.0:6.3, offX=0, offZ=indoors?10.5:state.camDist;
   const target = state.running ? new T.Vector3(p.x+offX, p.y+camHeight, p.z+offZ) : new T.Vector3(17,16,38);
   camera.position.lerp(target,1-Math.exp(-dt*6));
   camera.lookAt(state.running?p.x:0, state.running?1.6:2.5, state.running?p.z:14);
   const zone=world.applyView(p,state.running,camera);
-  for(const n of [doorman,npc,npc2])n.g.visible=zone==='outside'?n===doorman:zone==='reception'&&n!==doorman;
+  for(const n of outsideNpcs) n.g.visible = (zone==='outside');
+  for(const n of receptionNpcs) n.g.visible = (zone==='reception');
+  for(const n of patioNpcs) n.g.visible = (zone==='patio');
+  let guideTarget=null;
+  if(state.running && state.enrolled && !state.satTI){
+    if(!state.arrivedTI){
+      if(p.x>-9.5) guideTarget=world.marks.corridorEntry;
+      else if(p.x>-19.5) guideTarget=world.marks.patio;
+      else guideTarget=world.marks.tiDoor;
+    } else {
+      guideTarget=world.marks.tiSeat;
+    }
+  }
+  if(guideTarget){ guideArrow.visible=true; guideArrow.position.set(guideTarget.x, 2.55 + Math.sin(now*0.006)*0.18, guideTarget.z); } else guideArrow.visible=false;
   renderer.render(scene,camera);
 }
 camera.position.set(17,16,38); requestAnimationFrame(frame);
