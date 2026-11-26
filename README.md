@@ -1,9 +1,8 @@
-# Senac Tech Journey — protótipo 0.4
+# Senac Tech Journey — protótipo 0.5
 
-Melhorias da v0.4:
-- NPC do porteiro visível e com diálogo funcional
-- portão de entrada liberado após dizer "Bom dia"
-- portas principais mais conectadas às paredes
-- balcões de atendimento com colisão
-- câmera em terceira pessoa com rotação 360° por arraste do mouse/toque
-- pequenos ajustes de colisão e posicionamento
+Melhorias da v0.5:
+- portas principais maiores e mais integradas visualmente às paredes
+- NPC da portaria reposicionado para fora da cabine
+- NPCs do atendimento reposicionados para trás dos balcões
+- controles touch com joystick virtual, direcionais e botão OK
+- mantida a câmera 360° por arraste

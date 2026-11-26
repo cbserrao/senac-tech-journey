@@ -1,4 +1,4 @@
-/* Cenário v0.4 inspirado no Senac RR, com guarita, portas ajustadas e colisões. */
+/* Cenário v0.5 inspirado no Senac RR, com NPCs reposicionados, portas maiores e colisões. */
 window.criarCenarioTech = function(T, scene, box, walls, sign){
   const blue=0x07529b, orange=0xf7941d, white=0xe7e5df, gray=0x9ea5ab;
   const doorFrames=[];
@@ -31,8 +31,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
     const base=new T.Mesh(new T.CylinderGeometry(3.2,3.2,4.2,16), new T.MeshLambertMaterial({color:white}));
     base.position.set(x,2.1,z); scene.add(base); addCollider(x,z,6.1,6.1);
     const ring=new T.Mesh(new T.CylinderGeometry(3.35,3.35,.35,16), new T.MeshLambertMaterial({color:orange})); ring.position.set(x,4.22,z); scene.add(ring);
-    const dome=new T.Mesh(new T.SphereGeometry(3.1,16,8,0,Math.PI*2,0,Math.PI/2), new T.MeshLambertMaterial({color:0x205a92,flatShading:true}));
-    dome.scale.y=.7; dome.position.set(x,4.35,z); scene.add(dome);
+    const dome=new T.Mesh(new T.SphereGeometry(3.1,16,8,0,Math.PI*2,0,Math.PI/2), new T.MeshLambertMaterial({color:0x205a92,flatShading:true})); dome.scale.y=.7; dome.position.set(x,4.35,z); scene.add(dome);
     for(let a=0;a<4;a++){
       const angle=a*Math.PI/4;
       for(let j=0;j<12;j++){
@@ -42,9 +41,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
         const rib=box(.2,p.distanceTo(q)+.03,.22,mid.x,mid.y,mid.z,orange); rib.quaternion.setFromUnitVectors(new T.Vector3(0,1,0), q.clone().sub(p).normalize());
       }
     }
-    for(let a=0;a<8;a++){
-      const ang=a*Math.PI/4; const win=box(.92,1.35,.08, x+3.15*Math.sin(ang),2.2,z+3.15*Math.cos(ang),0x7faab9); win.rotation.y=ang;
-    }
+    for(let a=0;a<8;a++){ const ang=a*Math.PI/4; const win=box(.92,1.35,.08, x+3.15*Math.sin(ang),2.2,z+3.15*Math.cos(ang),0x7faab9); win.rotation.y=ang; }
   }
 
   // Terreno e rua
@@ -54,9 +51,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   for(let x=-50;x<50;x+=5) box(2.1,.02,.14,x,.06,34,0xf3ecd0);
 
   // Cercas
-  for(const s of [-1,1]){
-    for(let x=3;x<=50;x+=2.4){ box(.12,1.55,.12,s*x,.78,27.4,gray); if(x<49) box(2.18,.07,.07,s*(x+1.2),1.2,27.4,white); }
-  }
+  for(const s of [-1,1]) for(let x=3;x<=50;x+=2.4){ box(.12,1.55,.12,s*x,.78,27.4,gray); if(x<49) box(2.18,.07,.07,s*(x+1.2),1.2,27.4,white); }
 
   // Caminho externo e cobertura
   tile(3.8,20,0,17.5,0xe7e1cf);
@@ -72,7 +67,6 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   solid(.2,4.5,4,-8.2,2.25,23,white);
   solid(.2,4.5,1.2,-3.6,2.25,24.4,white);
   solid(.2,4.5,1.2,-3.6,2.25,21.6,white);
-  // frente mais aberta, com faixa de janela e abertura interna
   glass(1.4,2.6,.08,-3.55,1.5,22.95);
   box(4.8,.2,4.1,-5.9,4.55,23,blue); box(5,.24,4.3,-5.9,4.8,23,orange);
   sign('PORTARIA',-5.9,4.15,25.11,2.8,.46);
@@ -92,7 +86,7 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   solid(6.2,recH,.24,-5.9,recH/2,8,white); solid(6.2,recH,.24,5.9,recH/2,8,white);
   solid(.24,recH,14,-9,recH/2,-1,white);
   solid(.24,recH,3.5,-9,recH/2,6.25,white);
-  glass(.12,recH-1.2,9.4,9, (recH-1.2)/2+.2, 2.3); addCollider(9,2.3,.12,9.4);
+  glass(.12,recH-1.2,9.4,9,(recH-1.2)/2+.2,2.3); addCollider(9,2.3,.12,9.4);
   solid(.24,recH,4.1,9,recH/2,-5.95,white);
   solid(.24,recH,1.6,9,recH/2,7.2,white);
   for(const z of [-8,8]) box(recW,.28,.34,0,recH+.08,z,orange);
@@ -104,24 +98,27 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
   solid(.18,recH,7.4,-17.4,recH/2,0,white); solid(.18,recH,7.4,17.4,recH/2,0,white);
   tile(8,3.2,-13,0,0xe4dfd0); tile(8,3.2,13,0,0xe4dfd0);
 
-  // Portas principais mais conectadas às paredes
+  // Portas principais maiores e mais integradas às paredes
   function doubleDoor(z, label){
     const leaves=[];
-    // faixas laterais de parede junto à porta
-    solid(3.1,recH,.22,-4.45,recH/2,z,white);
-    solid(3.1,recH,.22, 4.45,recH/2,z,white);
-    // pilares laterais e travessa superior colados na porta
-    box(.22,3.5,.24,-1.33,1.75,z,white); box(.22,3.5,.24,1.33,1.75,z,white); box(2.9,.3,.26,0,3.5,z,white);
+    // paredes laterais mais próximas da abertura
+    solid(3.45,recH,.24,-5.0,recH/2,z,white);
+    solid(3.45,recH,.24, 5.0,recH/2,z,white);
+    // moldura da abertura
+    box(.32,3.9,.28,-1.72,1.95,z,white); box(.32,3.9,.28,1.72,1.95,z,white); box(3.75,.34,.28,0,3.76,z,white);
+    // folhas
+    const baseX=.82, openDist=1.45;
     for(const s of [-1,1]){
-      const g=new T.Group(); scene.add(g); g.position.set(s*.62,0,z);
-      glass(1.15,3.15,.075,0,1.62,0,g);
-      box(.05,3.2,.1,.56,1.62,0,gray,g); box(.05,3.2,.1,-.56,1.62,0,gray,g);
-      box(1.15,.05,.1,0,.06,0,gray,g); box(1.15,.05,.1,0,3.18,0,gray,g); box(.06,.34,.12,-s*.12,1.55,.07,gray,g);
+      const g=new T.Group(); scene.add(g); g.position.set(s*baseX,0,z);
+      glass(1.55,3.45,.08,0,1.75,0,g);
+      box(.06,3.5,.1,.76,1.75,0,gray,g); box(.06,3.5,.1,-.76,1.75,0,gray,g);
+      box(1.55,.06,.1,0,.05,0,gray,g); box(1.55,.06,.1,0,3.45,0,gray,g);
+      box(.07,.38,.12,-s*.18,1.7,.07,gray,g);
       leaves.push(g);
     }
-    box(2.8,.18,.25,0,3.35,z,blue);
+    box(3.85,.18,.26,0,3.55,z,blue);
     if(label) sign(label,0,4.75,z+0.22,4.9,.56);
-    doorFrames.push({z,leaves,open:0});
+    doorFrames.push({z,leaves,open:0,baseX,openDist,blockHalf:1.72});
   }
   doubleDoor(8,'ATENDIMENTO');
   doubleDoor(-8,'');
@@ -139,15 +136,18 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
 
   tile(4,9,-12.8,-8.5,0xe0ddcf); tile(4,9,12.8,-8.5,0xe0ddcf);
 
+  // Pontos de interação / NPCs
   const marks = {
-    doorman:{x:-5.55,z:22.85},
-    deskLeft:{x:-5.2,z:-0.4},
-    deskRight:{x:5.2,z:-0.4},
+    doorman:{x:-3.0,z:23.3},     // fora da cabine
+    deskLeft:{x:-5.2,z:-3.25},   // atrás do balcão
+    deskRight:{x:5.2,z:-3.25},   // atrás do balcão
     lobby:{x:0,z:0}
   };
 
+  // Massa externa do prédio
   for(const x of [-20,-12,12,20]) for(const z of [-11,-3,9,17]){ if(x===12&&z===-3) continue; pavilion(x,z); }
 
+  // cobertura central
   const roof = new T.Group(); scene.add(roof);
   const cap = new T.Mesh(new T.SphereGeometry(1,20,8,0,Math.PI*2,0,Math.PI/2), new T.MeshLambertMaterial({color:0x205a92,flatShading:true}));
   cap.scale.set(9.3,3.2,8.3); cap.position.y=5.8; roof.add(cap);
@@ -172,14 +172,14 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
       gate.open = T.MathUtils.lerp(gate.open, flags && flags.greeted ? 1 : 0, 1-Math.exp(-dt*7));
       gate.leaves.forEach((g,i)=> g.position.x = (i?1:-1) * (.55 + gate.open * .82));
       for(const d of doorFrames){
-        const near = Math.abs(p.x) < 2.2 && Math.abs(p.z-d.z) < 2.4;
+        const near = Math.abs(p.x) < 2.7 && Math.abs(p.z-d.z) < 2.6;
         d.open = T.MathUtils.lerp(d.open, near ? 1 : 0, 1-Math.exp(-dt*8));
-        d.leaves.forEach((g,i)=> g.position.x = (i?1:-1) * (.62 + d.open*1.15));
+        d.leaves.forEach((g,i)=> g.position.x = (i?1:-1) * (d.baseX + d.open*d.openDist));
       }
     },
     doorBlocked(x,z,flags){
       if(!(flags && flags.greeted) && Math.abs(z-21.2)<.45 && Math.abs(x)<1.2) return true;
-      return doorFrames.some(d=>Math.abs(z-d.z)<.45 && Math.abs(x)<1.25 && d.open<.8);
+      return doorFrames.some(d=>Math.abs(z-d.z)<.5 && Math.abs(x)<d.blockHalf && d.open<.8);
     }
   };
 };
