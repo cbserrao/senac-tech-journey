@@ -1,15 +1,9 @@
-# Senac Tech Journey — protótipo 0.3
+# Senac Tech Journey — protótipo 0.4
 
-Melhorias da v0.3:
-- guarita/sala do porteiro na entrada
-- portão liberado somente após cumprimentar com "Bom dia"
-- recepção ampliada aproximadamente ao dobro do tamanho anterior
-- pé-direito e cobertura mais altos
-- balcões maiores e espaço interno mais amplo
-- cadeiras, bebedouro e sala lateral visível por parede de vidro
-
-Arquivos:
-- index.html
-- simulador.js
-- cenario.js
-- carregador-canva.js
+Melhorias da v0.4:
+- NPC do porteiro visível e com diálogo funcional
+- portão de entrada liberado após dizer "Bom dia"
+- portas principais mais conectadas às paredes
+- balcões de atendimento com colisão
+- câmera em terceira pessoa com rotação 360° por arraste do mouse/toque
+- pequenos ajustes de colisão e posicionamento
