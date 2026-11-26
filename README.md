@@ -1,8 +1,7 @@
-# Senac Tech Journey — protótipo 0.6
+# Senac Tech Journey — v0.7
 
-Melhorias da v0.6:
-- dois joysticks circulares na tela (visual estilo jogo mobile)
-- joystick esquerdo para movimento
-- joystick direito para rotação da câmera
-- botão OK mantido para interação
-- movimentação agora é relativa à direção da câmera/jogador, ajustando-se ao giro atual
+- Detecção de dispositivos móveis (incluindo iPad).
+- Joystick de movimento e OK apenas no celular/tablet.
+- PC: WASD/setas e E.
+- Câmera fixa de acompanhamento, sem rotação manual.
+- Cenário e missões preservados.
