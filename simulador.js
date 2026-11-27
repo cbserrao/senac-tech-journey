@@ -318,7 +318,20 @@ function openWorkbench(d){
  function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];const dist=Math.hypot(g.position.x-target[0],g.position.z-target[2]);const snap=i===0?1.55:i>=6?1.7:1.02;if(i!==next||dist>snap){sfxError();g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste mais perto da área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
  sfxSuccess();g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.55,.68,1.4],[-1.56,.56,-1.55],[-1.03,.5,-1.15]],dark,.05);tube(world,[[-.95,.69,2],[-.25,.6,1.95],[.45,.54,.95],[.55,.48,.15]],dark,.045);tube(world,[[-.95,.72,2],[-.72,.76,1.28],[-.84,.7,.24],[-.84,.54,-1.25]],0xe1c45b,.02);}else{tube(world,[[.5,.43,.65],[.9,.46,.74],[1.45,.46,1.75]],0xb93c36,.032);tube(world,[[-.95,.65,2],[-.15,.58,2.2],[.58,.54,2.02],[1.45,.46,1.75]],dark,.03);tube(world,[[1.36,.46,1.72],[1.22,.42,1.45],[1.06,.45,.98],[.92,.48,.65]],0xcd4c44,.022);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;if(done.size===8)showPeripherals();}
  function movePiece(e,i){setRay(e);const t=specs[i][2];if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-t[1]-.03),point)){parts[i].position.set(point.x,Math.max(t[1]+.35,1.1),point.z);const ok=overTarget(e,i)&&i===specs.findIndex((_,n)=>!done.has(n));targets[i].material.color.setHex(ok?0x39ed75:0xffc14d);}}
- cv.onpointerdown=e=>{if(phase!=='assembly'||e.button!==0)return;e.preventDefault();cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}if(selected!==null&&overTarget(e,selected)){parts[selected].position.set(...specs[selected][2]);place(selected);selected=null;return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};msg.textContent='Selecionada: '+specs[i][0]+'. Arraste ou clique na área amarela.';sfxClick();}};
+ cv.onpointerdown=e=>{
+ if(e.button!==0)return;
+ if(phase==='peripherals'){
+   e.preventDefault();
+   if(external&&external.userData&&typeof external.userData.onPointerDown==='function')external.userData.onPointerDown(e);
+   return;
+ }
+ if(phase!=='assembly')return;
+ e.preventDefault();cv.setPointerCapture(e.pointerId);
+ if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}
+ if(selected!==null&&overTarget(e,selected)){parts[selected].position.set(...specs[selected][2]);place(selected);selected=null;return;}
+ const i=hit(e);
+ if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};msg.textContent='Selecionada: '+specs[i][0]+'. Arraste ou clique na área amarela.';sfxClick();}
+};
  cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>4)drag.moved=true;if(drag.moved)movePiece(e,drag.i);};
  cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved){movePiece(e,a.i);if(overTarget(e,a.i))parts[a.i].position.set(...specs[a.i][2]);else parts[a.i].position.set(99,1,99);place(a.i);selected=null;}else{selected=a.i;msg.textContent='Selecionada: '+specs[a.i][0]+'. Clique no alvo amarelo ou arraste.';}};
  cv.onpointercancel=cv.onlostpointercapture=()=>{if(drag&&drag.i>=0&&!done.has(drag.i)){parts[drag.i].position.set(...specs[drag.i][1]);targets[drag.i].material.color.setHex(0xffc14d);}drag=null;};
@@ -326,28 +339,53 @@ function openWorkbench(d){
  d.querySelector('#bench-back').onclick=()=>{sfxClick();leaveInspect();};d.querySelector('#bench-rotate').onclick=()=>{sfxClick();if(inspecting)preview.rotation.y+=Math.PI/2;else if(selected!==null&&!done.has(selected))parts[selected].rotation.y+=Math.PI/2;};
  const peripherals=[['Monitor','HDMI','Imagem'],['Teclado','USB','Digitação'],['Mouse','USB','Movimentação do cursor'],['Caixas de som','Áudio P2','Reprodução de áudio']];
  function showPeripherals(){
-   phase='peripherals';selected=null;drag=null;world.visible=false;external=new T.Group();sc.add(external);cam.position.set(0,11,12);cam.lookAt(0,1.3,0);
-   B(external,15,.35,8,0,-.22,0,0xa77d56);
-   // Torre tradicional fechada, painel frontal com baias, USB e botão power.
-   B(external,1.65,4.2,3.25,4.6,2.1,-.4,0x252a30);B(external,1.7,4.12,.15,4.6,2.1,1.26,0x161a1f);
-   for(const y of [3.65,3.25])B(external,1.38,.29,.05,4.6,y,1.36,0x30363c);
-   for(let k=0;k<12;k++)B(external,1.16,.045,.045,4.6,.75+k*.095,1.36,0x0e1217);
-   for(const x of [4.26,4.62])B(external,.23,.1,.055,x,2.78,1.37,0x8394a1);
-   const powerLed=B(external,.18,.18,.08,4.6,2.28,1.39,0x4a535b);
-   // Monitor com suporte, teclado com teclas individuais, mouse e duas caixas acústicas.
-   B(external,5.4,3.12,.27,-.65,3.05,-1.35,0x202832);const screen=B(external,5.1,2.82,.035,-.65,3.05,-1.19,0x101820);B(external,.34,1.28,.45,-.65,.84,-1.35,0x303943);B(external,1.7,.16,.95,-.65,.12,-1.15,0x303943);
-   B(external,3.5,.16,1.15,-.85,.13,1.65,0x252d36);for(let y=0;y<5;y++)for(let x=0;x<15;x++)B(external,.18,.05,.16,-2.4+x*.22,.24,1.2+y*.2,0x53616e);B(external,1.1,.055,.16,-.85,.25,2.05,0x78838d);
-   const mouse=cyl(external,.43,.24,1.8,.15,1.7,0x303943);mouse.scale.z=1.5;B(external,.08,.06,.2,1.8,.3,1.55,0x9aa7b0);
-   for(const x of [-4.1,2.8]){B(external,.78,1.6,.7,x,.8,-.8,0x242c34);for(const [y,rad] of [[.57,.25],[1.13,.14]]){const m=cyl(external,rad,.065,x,y,-.4,0x141b22);m.rotation.x=Math.PI/2;}B(external,.065,.065,.035,x,.22,-.41,0x79d89a);}
-   const wirePaths=[ [[-0.65,.16,-1.65],[1,.12,-2.65],[4.6,.18,-2.2]], [[-.85,.15,1.05],[-.4,.12,.4],[2.7,.12,-2.3],[4.6,.2,-2.2]], [[1.8,.15,1.1],[2.1,.12,.4],[3.5,.12,-2.4],[4.6,.22,-2.2]], [[-4.1,.2,-1.2],[-3.7,.12,-2.9],[2.8,.12,-2.9],[4.6,.24,-2.2]] ];
+   phase='peripherals';selected=null;drag=null;connected.clear();world.visible=false;if(external){sc.remove(external);free(external);}external=new T.Group();sc.add(external);cam.position.set(0,8.8,-13.8);cam.lookAt(1.8,2.2,0);
+   B(external,16,.35,9,0,-.22,0,0xa77d56);
+   const caseX=3.9, caseY=2.12, caseZ=0;
+   // Gabinete em visão traseira.
+   B(external,1.7,4.2,3.25,caseX,caseY,caseZ,0x252a30); B(external,1.6,4.05,3.08,caseX,caseY,caseZ,0x343a40);
+   B(external,1.62,3.96,.08,caseX,caseY,-1.59,0xc7ccd3);
+   const rearPanel=B(external,1.05,2.4,.05,caseX+.14,caseY+.18,-1.63,0xb9c1c9);
+   // fonte, ventoinha e slots traseiros
+   const psuVent=cyl(external,.6,.08,caseX+.25,caseY+1.22,-1.66,0x2a3138); psuVent.rotation.x=Math.PI/2;
+   for(let i=0;i<16;i++){const a=i/16*Math.PI*2;B(external,.06,.06,.035,caseX+.25+Math.cos(a)*.45,caseY+1.22+Math.sin(a)*.45,-1.675,0x6d7882);} 
+   B(external,.34,.2,.05,caseX-.45,caseY+1.1,-1.67,0x11171d); // PSU socket
+   B(external,.18,.18,.05,caseX-.35,caseY+1.58,-1.67,0x11171d); // switch
+   B(external,.18,1.95,.04,caseX-.43,caseY-.34,-1.67,0xb0b8c1); // slot column
+   for(let j=0;j<7;j++)B(external,.62,.19,.03,caseX+.1,caseY-1.2+j*.24,-1.68,0x5b636d);
+   B(external,.92,1.18,.045,caseX+.56,caseY-.2,-1.675,0x23292f); for(let j=0;j<96;j++)B(external,.035,.035,.03,caseX+.22+(j%12)*.055,caseY-.72+Math.floor(j/12)*.14,-1.69,0x97a3ad);
+   // conjunto I/O
+   B(external,.46,.82,.04,caseX-.17,caseY-.12,-1.67,0x8e98a3);
+   const hdmiPort=B(external,.22,.08,.07,caseX-.12,caseY+.02,-1.73,0xffc14d);
+   const usbKbPort=B(external,.18,.08,.07,caseX-.24,caseY-.24,-1.73,0xffc14d);
+   const usbMousePort=B(external,.18,.08,.07,caseX-.02,caseY-.24,-1.73,0xffc14d);
+   const audioPort=B(external,.14,.14,.07,caseX-.13,caseY-.52,-1.73,0xffc14d);
+   [hdmiPort,usbKbPort,usbMousePort,audioPort].forEach(m=>{m.renderOrder=90;const edge=new T.LineSegments(new T.EdgesGeometry(m.geometry),new T.LineBasicMaterial({color:0xffeb77,depthTest:false}));edge.renderOrder=91;m.add(edge);});
+   const portTargets=[hdmiPort,usbKbPort,usbMousePort,audioPort];
+   hdmiPort.userData={accept:0,label:'HDMI'}; usbKbPort.userData={accept:1,label:'USB do teclado'}; usbMousePort.userData={accept:2,label:'USB do mouse'}; audioPort.userData={accept:3,label:'Áudio P2'};
+   // painel frontal para LED e botão de power
+   B(external,1.7,4.12,.15,caseX,caseY,1.26,0x161a1f); for(const y of [3.65,3.25])B(external,1.38,.29,.05,caseX,y,1.36,0x30363c); for(let k=0;k<12;k++)B(external,1.16,.045,.045,caseX,.75+k*.095,1.36,0x0e1217); for(const x of [caseX-.34,caseX+.02])B(external,.23,.1,.055,x,2.78,1.37,0x8394a1);
+   const powerLed=B(external,.18,.18,.08,caseX,2.28,1.39,0x4a535b);
+   // periféricos sobre a bancada.
+   const monX=-4.25; B(external,4.9,2.8,.27,monX,3.0,-.55,0x202832); const monitorScreen=B(external,4.62,2.48,.035,monX,3.0,-.39,0x101820); B(external,.34,1.28,.45,monX,.84,-.55,0x303943); B(external,1.7,.16,.95,monX,.12,-.35,0x303943);
+   const kbX=-4.6; B(external,3.5,.16,1.15,kbX,.13,2.15,0x252d36); for(let y=0;y<5;y++)for(let x=0;x<15;x++)B(external,.18,.05,.16,kbX-1.55+x*.22,.24,1.7+y*.2,0x53616e); B(external,1.1,.055,.16,kbX,.25,2.55,0x78838d);
+   const mouseX=-1.9; const mouse=cyl(external,.43,.24,mouseX,.15,2.05,0x303943);mouse.scale.z=1.5;B(external,.08,.06,.2,mouseX,.3,1.9,0x9aa7b0);
+   const speakerXs=[-6.7,-2.25]; speakerXs.forEach(x=>{B(external,.78,1.6,.7,x,.8,-1.3,0x242c34);for(const [y,rad] of [[.57,.25],[1.13,.14]]){const m=cyl(external,rad,.065,x,y,-.9,0x141b22);m.rotation.x=Math.PI/2;}B(external,.065,.065,.035,x,.22,-.91,0x79d89a);});
+   const wirePaths=[
+     [[monX,.2,-.35],[-1.8,.12,-.85],[1.2,.5,-1.15],[caseX-.12,caseY+.02,-1.64]],
+     [[kbX-1.35,.16,2.1],[-2.6,.14,1.15],[.8,.55,-.95],[caseX-.24,caseY-.24,-1.64]],
+     [[mouseX,.16,1.78],[-.8,.14,1.0],[1.2,.55,-.88],[caseX-.02,caseY-.24,-1.64]],
+     [[-6.7,.22,-1.75],[-4.8,.12,-2.4],[-.8,.12,-2.45],[2.2,.6,-1.45],[caseX-.13,caseY-.52,-1.64]]
+   ];
    const panel=document.createElement('div');panel.style.cssText='position:absolute;top:10px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none';host.append(panel);
    let chosen=null;
-   const status=document.createElement('div');status.style.cssText='width:100%;text-align:center;color:white;background:#102849dd;padding:8px;border-radius:6px';status.textContent='Selecione um periférico e depois a porta correta.';panel.append(status);
-   const buttons=peripherals.map(([name,port],i)=>{const b=document.createElement('button');b.textContent=name;b.style.cssText='pointer-events:auto;padding:9px;background:#f7941d;color:#102849;border:0;border-radius:6px;font-weight:bold';b.onclick=()=>{if(connected.has(i))return;chosen=i;sfxClick();status.textContent='Conecte '+name+': escolha a porta.';buttons.forEach((v,j)=>v.style.outline=j===i?'3px solid white':'none');};panel.append(b);return b;});
-   const ports=document.createElement('div');ports.style.cssText='width:100%;display:flex;justify-content:center;gap:6px';panel.append(ports);
-   for(const port of ['HDMI','USB','Áudio P2']){const b=document.createElement('button');b.textContent=port;b.style.cssText='pointer-events:auto;background:#e4edf5;border:0;border-radius:5px;padding:8px 14px;color:#102849;font-weight:bold';ports.append(b);b.onclick=()=>{if(chosen===null){sfxError();status.textContent='Selecione primeiro um periférico.';return;}const i=chosen;if(port!==peripherals[i][1]){sfxError();status.textContent='Porta incorreta. Tente novamente.';return;}connected.add(i);tube(external,wirePaths[i],i===0?0x27323d:i===3?0x37634b:0x20262c,.045);buttons[i].textContent='✓ '+peripherals[i][0];buttons[i].disabled=true;buttons[i].style.background='#8de3ac';buttons[i].style.outline='none';chosen=null;sfxSuccess();counter.textContent='8/8 · '+connected.size+'/4 periféricos';status.textContent=connected.size===4?'Todos conectados. Pressione Ligar PC.':'Conectado corretamente! Escolha outro periférico.';d.querySelector('#bench-power').disabled=connected.size!==4;};}
-   counter.textContent='8/8 · 0/4 periféricos';msg.textContent='Montagem interna concluída! Conecte monitor, teclado, mouse e caixas de som.';for(const id of ['bench-inspect','bench-rotate','bench-back'])d.querySelector('#'+id).hidden=true;d.querySelector('#bench-power').disabled=true;d.querySelector('#bench-finish').disabled=true;
-   d.querySelector('#bench-power').onclick=()=>{if(phase!=='peripherals'||connected.size!==4)return;phase='boot';powered=true;sfxPower();powerLed.material.color.setHex(0x6aff98);powerLed.material.emissive.setHex(0x37b862);powerLed.material.emissiveIntensity=1;screen.material.color.setHex(0x314b65);panel.remove();d.querySelector('#bench-power').disabled=true;msg.textContent='Inicializando computador...';startBoot();};
+   const status=document.createElement('div');status.style.cssText='width:100%;text-align:center;color:white;background:#102849dd;padding:8px;border-radius:6px';status.textContent='Selecione um periférico e clique na área amarela correspondente na traseira do gabinete.';panel.append(status);
+   const hint=document.createElement('div');hint.style.cssText='width:100%;text-align:center;color:#dce7f2;background:#0a1828cc;padding:6px;border-radius:6px;font-size:13px';hint.textContent='Monitor → HDMI · Teclado → USB · Mouse → USB · Caixa de som → Áudio P2';panel.append(hint);
+   const buttons=peripherals.map(([name,port],i)=>{const b=document.createElement('button');b.textContent=name;b.style.cssText='pointer-events:auto;padding:9px;background:#f7941d;color:#102849;border:0;border-radius:6px;font-weight:bold';b.onclick=()=>{if(connected.has(i))return;chosen=i;sfxClick();refreshTargets();status.textContent='Conecte '+name+': clique no conector amarelo '+port+' na traseira do gabinete.';buttons.forEach((v,j)=>v.style.outline=j===i?'3px solid white':'none');};panel.append(b);return b;});
+   function refreshTargets(){portTargets.forEach(m=>{if(connected.has(m.userData.accept)){m.visible=true;m.material.color.setHex(0x39ed75);m.material.opacity=.96;}else if(chosen===null){m.visible=true;m.material.color.setHex(0xffc14d);m.material.opacity=.78;}else{const active=m.userData.accept===chosen;m.visible=true;m.material.color.setHex(active?0xffeb66:0xc49c35);m.material.opacity=active?.98:.32;}});}refreshTargets();
+   external.userData.onPointerDown=(e)=>{setRay(e);const hits=ray.intersectObjects(portTargets,true);if(!hits.length){if(chosen!==null){sfxError();status.textContent='Clique em um conector amarelo na parte traseira do gabinete.';}return;}let obj=hits[0].object;while(obj.parent&&!portTargets.includes(obj))obj=obj.parent;if(!portTargets.includes(obj))return;if(chosen===null){sfxError();status.textContent='Selecione primeiro um periférico na barra superior.';return;}const i=chosen;if(obj.userData.accept!==i){sfxError();obj.material.color.setHex(0xff6565);status.textContent='Conector incorreto. Tente novamente no alvo amarelo certo.';setTimeout(refreshTargets,450);return;}connected.add(i);tube(external,wirePaths[i],i===0?0x27323d:i===3?0x37634b:0x20262c,.045);buttons[i].textContent='✓ '+peripherals[i][0];buttons[i].disabled=true;buttons[i].style.background='#8de3ac';buttons[i].style.outline='none';chosen=null;sfxSuccess();counter.textContent='8/8 · '+connected.size+'/4 periféricos';status.textContent=connected.size===4?'Todos os periféricos foram conectados. Pressione Ligar PC.':'Conectado corretamente! Selecione o próximo periférico.';refreshTargets();d.querySelector('#bench-power').disabled=connected.size!==4;};
+   counter.textContent='8/8 · 0/4 periféricos';msg.textContent='Montagem interna concluída! Agora conecte os periféricos na traseira do gabinete usando os alvos amarelos.';for(const id of ['bench-inspect','bench-rotate','bench-back'])d.querySelector('#'+id).hidden=true;d.querySelector('#bench-power').disabled=true;d.querySelector('#bench-finish').disabled=true;
+   d.querySelector('#bench-power').onclick=()=>{if(phase!=='peripherals'||connected.size!==4)return;phase='boot';powered=true;sfxPower();powerLed.material.color.setHex(0x6aff98);powerLed.material.emissive.setHex(0x37b862);powerLed.material.emissiveIntensity=1;monitorScreen.material.color.setHex(0x314b65);panel.remove();d.querySelector('#bench-power').disabled=true;msg.textContent='Inicializando computador...';startBoot();};
  }
  function startBoot(){
    const screen=document.createElement('div');screen.style.cssText='position:absolute;inset:0;background:#080f18;color:#bceacb;padding:clamp(15px,4vw,48px);font:clamp(12px,1.7vw,19px) monospace;overflow:auto;z-index:5;box-sizing:border-box';host.append(screen);
