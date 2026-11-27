@@ -168,8 +168,9 @@ function openWorkbench(d){
  const B=(g,w,h,l,x,y,z,c)=>box(w,h,l,x,y,z,c,g);const world=new T.Group();sc.add(world);const bench=new T.Group();world.add(bench);
  B(bench,16,.4,9,0,-.25,0,0xa77d56);B(bench,6.6,.035,6.5,0,0,0,0x35434b);
  const frame=new T.Group();world.add(frame);const dark=0x20252c,steel=0x8e969e,pcb=0x275e45;
- B(frame,4.4,.12,5.4,0,.15,0,steel);for(const x of [-2.2,2.2])B(frame,.12,.85,5.4,x,.57,0,dark);
+ B(frame,4.45,.12,5.45,0,.15,0,steel);for(const x of [-2.2,2.2])B(frame,.12,.85,5.4,x,.57,0,dark);
  B(frame,4.4,.85,.16,0,.57,2.7,dark);B(frame,4.4,.85,.12,0,.57,-2.7,steel);
+ B(frame,4.15,.05,5.15,0,.62,0,0x7d848a); B(frame,4.12,.02,5.12,0,.66,0,0xbfc5ca); // bandeja interna
  // Painel frontal estilo torre tradicional: baias, USB, áudio e power.
  for(const x of [-1.3,-.35])B(frame,.85,.13,.04,x,.75,2.8,0x10151a);
  for(let i=0;i<2;i++)B(frame,.23,.12,.045,.65+i*.38,.77,2.8,steel);
@@ -188,17 +189,71 @@ function openWorkbench(d){
  ['Cooler',[5.3,.3,-2.1],[-1.03,.69,-1.15],[.9,.42,.9],'Fixe o cooler sobre o processador.'],
  ['SSD',[5.3,.3,-.15],[1.45,.39,1.3],[.95,.13,1.35],'Instale o SSD na baia de armazenamento.'],
  ['Fonte',[5.3,.3,2.15],[-.95,.59,2.02],[1.7,.62,1.05],'Instale a fonte na parte inferior.'],
- ['Cabo ATX / CPU',[-5.2,.3,-3.25],[.57,.48,.15],[.4,.15,.4],'Conecte a alimentação ATX e CPU.'],
- ['Cabos SATA',[5.2,.3,3.65],[.92,.48,.65],[.4,.15,.4],'Conecte os cabos SATA de dados e energia.']];
+ ['Cabo ATX / CPU',[-5.2,.3,-3.25],[.57,.48,.15],[1.15,.18,1.0],'Conecte a alimentação ATX e CPU.'],
+ ['Cabos SATA',[5.2,.3,3.65],[.92,.48,.65],[1.05,.18,1.0],'Conecte os cabos SATA de dados e energia.']];
  const parts=[],targets=[],done=new Set();let selected=null,inspecting=false,drag=null,orientation=0,powered=false,preview=null;
  function make(i){const g=new T.Group();const [w,h,l]=specs[i][3];
- if(i===0){B(g,w,h,l,0,0,0,pcb);B(g,.76,.08,.76,-.38,.11,-.8,steel);B(g,.55,.03,.55,-.38,.17,-.8,dark);for(let j=0;j<4;j++)B(g,.09,.12,1.55,.65+j*.18,.09,-.5,dark);for(let j=0;j<3;j++)B(g,1.8,.09,.12,-.2,.09,.45+j*.39,0xced4d8);for(let j=0;j<5;j++)B(g,.23,.25,.35,-1.3,.14,-1.35+j*.48,steel);for(let j=0;j<9;j++)cyl(g,.065,.18,-.9+j*.18,.13,-1.48,steel);for(let j=0;j<9;j++)B(g,.015,.013,1.4,-1.1+j*.22,.07,.6,0x63916f);}
- else if(i===1){B(g,.7,.06,.7,0,0,0,pcb);B(g,.59,.09,.59,0,.07,0,steel);for(let x=0;x<8;x++)for(let z=0;z<8;z++)B(g,.045,.02,.045,-.28+x*.08,-.04,-.28+z*.08,0xd4b15b);B(g,.07,.02,.07,-.28,.12,-.28,0xe4b94e);}
- else if(i===2){B(g,.13,.42,1.55,0,0,0,pcb);for(let j=0;j<8;j++)B(g,.035,.23,.13,.085,.04,-.65+j*.18,dark);for(let j=0;j<24;j++)B(g,.04,.08,.036,.075,-.17,-.7+j*.06,0xd4b15b);}
- else if(i===3){B(g,.9,.2,.9,0,0,0,steel);for(let j=0;j<10;j++)B(g,.04,.23,.87,-.4+j*.09,.03,0,0xb8c3ca);fan(g,0,.22,0,.43);}
- else if(i===4){B(g,.95,.13,1.35,0,0,0,0x23292f);B(g,.83,.014,1.12,0,.074,0,0xaeb9c3);const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#e5e7eb';ctx.fillRect(0,0,256,128);ctx.fillStyle='#172c43';ctx.fillRect(0,0,256,38);ctx.fillStyle='white';ctx.font='bold 24px Arial';ctx.fillText('SOLID STATE DRIVE',8,27);ctx.fillStyle='#182c3e';ctx.font='bold 32px Arial';ctx.fillText('SSD',12,80);ctx.font='16px Arial';ctx.fillText('2.5” SATA',12,105);const tex=new T.CanvasTexture(c);const m=new T.Mesh(new T.PlaneGeometry(.83,1.1),new T.MeshBasicMaterial({map:tex}));m.rotation.x=-Math.PI/2;m.position.y=.085;g.add(m);for(let j=0;j<7;j++)B(g,.024,.025,.09,-.35+j*.035,.01,.7,0xd8b55f);for(let j=0;j<15;j++)B(g,.021,.025,.09,-.02+j*.026,.01,.7,0xd8b55f);}
- else if(i===5){B(g,w,h,l,0,0,0,0x414a51);fan(g,0,h/2,0,.43);B(g,.45,.25,.035,-.4,0,-.54,dark);for(let j=0;j<3;j++)B(g,.06,.12,.025,-.54+j*.14,0,-.565,steel);}
- else {for(let j=0;j<5;j++)tube(g,[[ -.55,.05,j*.045],[0,.12,.4+j*.045],[.5,.05,j*.045]],i===6?0x22272b:0xb43c36,.028);B(g,.3,.12,.25,-.55,.05,0,dark);B(g,.24,.12,.25,.5,.05,0,dark);}
+ if(i===0){
+   B(g,w,h,l,0,0,0,pcb); // placa base
+   B(g,.82,.08,.82,-.42,.11,-.88,steel); B(g,.58,.03,.58,-.42,.17,-.88,dark); // socket
+   B(g,.62,.18,.48,-1.03,.12,.95,0x6f7c85); B(g,.22,.16,.44,-1.38,.12,.95,0xaeb7bd); // heatsinks
+   for(let j=0;j<4;j++) B(g,.1,.14,1.62,.84+j*.18,.09,-.52,0x1e252c); // dimm slots
+   for(let j=0;j<4;j++) B(g,.03,.42,.08,.79+j*.18,.09,-.52,0xc7a964); // dimm locks accent
+   for(let j=0;j<3;j++) B(g,1.95,.09,.13,-.1,.09,.5+j*.42,0xd9dfe3); // pci slots
+   for(let j=0;j<2;j++) B(g,.18,.07,1.2,-.72+j*.28,.12,1.45,0x20262d); // m.2 / chipset bars
+   for(let j=0;j<5;j++) B(g,.23,.25,.36,-1.34,.14,-1.35+j*.48,steel); // IO stack
+   for(let j=0;j<10;j++) cyl(g,.065,.18,-.92+j*.18,.13,-1.48,steel); // caps
+   for(let j=0;j<10;j++) B(g,.018,.018,1.38,-1.08+j*.2,.07,.58,0x68966f); // traces
+   for(let j=0;j<8;j++) B(g,.04,.08,.05,1.19,.1,-1.15+j*.3,0xd7b05c); // 24-pin area
+   for(let j=0;j<6;j++) B(g,.03,.06,.05,-1.35,.1,-.2+j*.16,0xd7b05c); // rear ports color
+ }
+ else if(i===1){
+   B(g,.7,.06,.7,0,0,0,pcb); B(g,.59,.09,.59,0,.07,0,steel); B(g,.43,.02,.43,0,.12,0,0xc9d0d4);
+   for(let x=0;x<8;x++) for(let z=0;z<8;z++) B(g,.045,.02,.045,-.28+x*.08,-.04,-.28+z*.08,0xd4b15b);
+   B(g,.07,.02,.07,-.28,.12,-.28,0xe4b94e); B(g,.14,.01,.5,.24,.13,-.02,0x6c7780);
+ }
+ else if(i===2){
+   B(g,.14,.42,1.56,0,0,0,pcb); B(g,.02,.38,1.42,.06,0,-.02,0x4b5964);
+   for(let j=0;j<8;j++) B(g,.038,.23,.14,.09,.04,-.65+j*.18,dark); // chips
+   for(let j=0;j<24;j++) B(g,.042,.08,.038,.08,-.17,-.7+j*.06,0xd4b15b); // contatos
+   for(let j=0;j<3;j++) B(g,.1,.03,.48,-.01,.12,-.35+j*.35,0x5e7484);
+ }
+ else if(i===3){
+   B(g,.96,.2,.96,0,0,0,0xb2bcc4); B(g,.72,.16,.72,0,.08,0,0xced5d9); // top plate
+   for(let j=0;j<12;j++) B(g,.045,.24,.88,-.45+j*.082,.02,0,0xb0bbc3); // fins
+   for(const x of [-.36,.36]) for(const z of [-.36,.36]) B(g,.09,.18,.09,x,-.02,z,0x89949c); // screws
+   fan(g,0,.22,0,.43);
+ }
+ else if(i===4){
+   B(g,.96,.14,1.36,0,0,0,0x212930); B(g,.85,.014,1.14,0,.078,0,0xb0b8be); B(g,.92,.03,1.32,0,-.07,0,0x1a2127);
+   const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#e7eaec';ctx.fillRect(0,0,256,128);ctx.fillStyle='#163450';ctx.fillRect(0,0,256,38);ctx.fillStyle='white';ctx.font='bold 24px Arial';ctx.fillText('SOLID STATE DRIVE',8,27);ctx.fillStyle='#243b4f';ctx.font='bold 31px Arial';ctx.fillText('SSD',12,80);ctx.font='16px Arial';ctx.fillText('2.5” SATA 6Gb/s',12,105);const tex=new T.CanvasTexture(c);const m=new T.Mesh(new T.PlaneGeometry(.84,1.12),new T.MeshBasicMaterial({map:tex}));m.rotation.x=-Math.PI/2;m.position.y=.084;g.add(m);
+   for(let j=0;j<4;j++) cyl(g,.03,.04,j<2?-0.39:0.39,.01,j%2?-0.58:0.58,0xaeb7bd); // screws
+   for(let j=0;j<7;j++) B(g,.024,.026,.09,-.36+j*.036,.01,.69,0xd8b55f); // power pins
+   for(let j=0;j<15;j++) B(g,.021,.026,.09,-.02+j*.026,.01,.69,0xd8b55f); // sata data pins
+   B(g,.18,.08,.12,-.37,.01,.58,0x171f25); B(g,.38,.08,.12,.19,.01,.58,0x171f25); // connectors housing
+ }
+ else if(i===5){
+   B(g,w,h,l,0,0,0,0x40474d); B(g,w-.08,h-.08,l-.08,0,.02,0,0x59636b); // casing
+   fan(g,0,h/2,0,.43); B(g,.52,.29,.04,-.42,0,-.53,0x13191f); // ac socket block
+   B(g,.18,.2,.03,-.74,0,-.535,0x090c10); // power switch
+   for(let j=0;j<3;j++) B(g,.065,.13,.025,-.54+j*.14,0,-.565,steel); // socket pins
+   for(let j=0;j<14;j++) B(g,.03,.08,.03,.38+.03*(j%7),-.16+.11*Math.floor(j/7),-.57,0x11171d); // vent holes
+   B(g,.46,.08,.03,.48,.18,-.57,0x11171d);
+ }
+ else if(i===6){
+   // cabo ATX + CPU mais grosso e visível
+   for(let j=0;j<10;j++) tube(g,[[-.7,.03,-.14+j*.03],[-.25,.12,.15+j*.03],[.2,.11,.12+j*.03],[.68,.03,-.05+j*.03]],0x202429,.03);
+   B(g,.38,.16,.38,-.76,.03,0,0x1a2127); B(g,.26,.13,.28,.8,.03,.16,0x1a2127); B(g,.2,.11,.24,.8,.03,-.17,0x1a2127);
+   for(let j=0;j<6;j++) B(g,.022,.06,.04,-.84+j*.05,.03,0,0xc4a45f); // atx pins
+   for(let j=0;j<4;j++) B(g,.02,.05,.03,.73+j*.03,.03,.16,0xd6b769); // cpu pins
+ }
+ else if(i===7){
+   // cabos sata vermelho + energia preta
+   for(let j=0;j<2;j++) tube(g,[[-.62,.02,-.15+j*.3],[-.12,.1,-.08+j*.3],[.18,.08,-.06+j*.3],[.62,.02,-.14+j*.3]],0xb63b36,.032);
+   for(let j=0;j<3;j++) tube(g,[[-.56,.03,-.2+j*.2],[-.05,.11,.0+j*.15],[.3,.08,.02+j*.1],[.64,.03,.12+j*.1]],0x25292e,.028);
+   B(g,.28,.12,.18,-.7,.03,0,0x171d23); B(g,.22,.1,.16,.75,.03,-.14,0x171d23); B(g,.3,.1,.16,.75,.03,.18,0x171d23);
+   B(g,.08,.04,.11,.86,.03,-.14,0xc7443a); B(g,.1,.04,.13,.88,.03,.18,0x0f151a);
+ }
  return g;}
  function tube(g,points,c,rad=.035){const mesh=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p))),24,rad,8,false),surfaceMaterial(c,.1,.1,.1));g.add(mesh);return mesh;}
  specs.forEach((s,i)=>{const g=make(i);g.position.set(...s[1]);world.add(g);g.userData.index=i;parts.push(g);const t=new T.Mesh(new T.BoxGeometry(s[3][0]+.12,.045,s[3][2]+.12),new T.MeshBasicMaterial({color:0xffc14d,transparent:true,opacity:.38,depthWrite:false}));t.position.set(s[2][0],s[2][1]+.03,s[2][2]);world.add(t);targets.push(t);});
@@ -208,12 +263,12 @@ function openWorkbench(d){
  const ray=new T.Raycaster(),pointer=new T.Vector2(),plane=new T.Plane(new T.Vector3(0,1,0),-.65),point=new T.Vector3();const cv=r.domElement;
  function setRay(e){const q=cv.getBoundingClientRect();pointer.set((e.clientX-q.left)/q.width*2-1,-(e.clientY-q.top)/q.height*2+1);ray.setFromCamera(pointer,cam);}
  function hit(e){setRay(e);const hits=ray.intersectObjects(parts.filter((_,i)=>!done.has(i)),true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!parts.includes(o))o=o.parent;return parts.indexOf(o);}
- function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Clique para ampliar; arraste para encaixar.`;targets.forEach((t,i)=>t.visible=!inspecting&&i===next);d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
+ function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Clique para ampliar; arraste até a área amarela para encaixar.`;targets.forEach((t,i)=>t.visible=!inspecting&&i===next);d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
  function inspect(i){if(inspecting)leaveInspect();selected=i;inspecting=true;world.visible=false;preview=make(i);sc.add(preview);const sz=new T.Box3().setFromObject(preview).getSize(new T.Vector3());preview.scale.setScalar(4/Math.max(sz.x,sz.y,sz.z));preview.rotation.set(.35,.5,0);cam.position.set(0,5,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=false;msg.textContent=specs[i][0]+' — arraste para rotacionar. Volte à bancada para encaixar.';}
  function leaveInspect(){if(preview){sc.remove(preview);free(preview);preview=null;}inspecting=false;world.visible=true;cam.position.set(0,14,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=true;text();}
  function free(g){g.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map)o.material.map.dispose();o.material.dispose();}});}
- function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];if(i!==next||Math.hypot(g.position.x-target[0],g.position.z-target[2])> .78){g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste até a área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
- g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.65,.6,1.5],[-1.65,.55,-1.6],[-1.03,.5,-1.5]],dark);tube(world,[[-.95,.7,2],[.85,.45,1.6],[.85,.4,.15],[.55,.48,.15]],dark);}else{tube(world,[[.5,.43,.65],[.9,.45,.7],[1.45,.46,1.75]],0xb93c36);tube(world,[[-.95,.65,2],[.6,.5,2.25],[1.45,.46,1.75]],dark);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;}
+ function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];const dist=Math.hypot(g.position.x-target[0],g.position.z-target[2]);const snap=i>=6?1.7:.92;if(i!==next||dist>snap){g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste mais perto da área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
+ g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.55,.68,1.4],[-1.56,.56,-1.55],[-1.03,.5,-1.15]],dark,.05);tube(world,[[-.95,.69,2],[-.25,.6,1.95],[.45,.54,.95],[.55,.48,.15]],dark,.045);tube(world,[[-.95,.72,2],[-.72,.76,1.28],[-.84,.7,.24],[-.84,.54,-1.25]],0xe1c45b,.02);}else{tube(world,[[.5,.43,.65],[.9,.46,.74],[1.45,.46,1.75]],0xb93c36,.032);tube(world,[[-.95,.65,2],[-.15,.58,2.2],[.58,.54,2.02],[1.45,.46,1.75]],dark,.03);tube(world,[[1.36,.46,1.72],[1.22,.42,1.45],[1.06,.45,.98],[.92,.48,.65]],0xcd4c44,.022);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;}
  cv.onpointerdown=e=>{if(e.button!==0)return;cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};}};
  cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){setRay(e);if(ray.ray.intersectPlane(plane,point))parts[drag.i].position.copy(point);}};
  cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved)place(a.i);else inspect(a.i);};cv.onpointercancel=()=>{if(drag&&drag.i>=0)parts[drag.i].position.set(...specs[drag.i][1]);drag=null;};
