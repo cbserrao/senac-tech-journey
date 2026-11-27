@@ -192,7 +192,7 @@ function openTiMenu(){
 }
 
 function startAssembly(){
- if(state.assemblyDone)return;
+ if(!state.lessonDone)return;
  root.querySelector('#tj-mission').parentElement.querySelector('b').textContent='MISSÃO 03 — DIA 2';
  showMission('Monte o computador na bancada de manutenção.');
  const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Vamos montar um computador em uma bancada de manutenção. Trabalhe com o equipamento desligado. Arraste cada peça até o encaixe destacado. Use os rótulos das peças para inspecioná-las em 3D quando quiser.</p><button style="padding:12px">Iniciar montagem</button>');
@@ -201,7 +201,7 @@ function startAssembly(){
 function openWorkbench(d){
  disposePartViewer();
  d.style.cssText='position:absolute;inset:0;background:#142333;z-index:20;display:flex;flex-direction:column;color:white;overflow:hidden;touch-action:none';
- d.innerHTML=`<div style="padding:10px 16px;background:#102849;border-bottom:2px solid #f7941d;display:flex;justify-content:space-between;align-items:center"><b style="color:#ffb04f">DIA 2 · BANCADA DE MANUTENÇÃO</b><span id="bench-count">0/8</span></div><div id="bench-stage" style="flex:1;min-height:0;position:relative"></div><div style="padding:9px 14px;background:#102849;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span id="bench-message" style="flex:1;min-width:200px"></span><button id="bench-rotate">Girar peça</button><button id="bench-back" hidden>Voltar à bancada</button><button id="bench-power" disabled>Ligar PC</button><button id="bench-finish" disabled>Concluir</button></div>`;
+ d.innerHTML=`<div style="padding:10px 16px;background:#102849;border-bottom:2px solid #f7941d;display:flex;justify-content:space-between;align-items:center"><b style="color:#ffb04f">DIA 2 · BANCADA DE MANUTENÇÃO</b><span id="bench-count">0/8</span></div><div id="bench-stage" style="flex:1;min-height:0;position:relative"></div><div style="padding:9px 14px;background:#102849;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span id="bench-message" style="flex:1;min-width:200px"></span><button id="bench-inspect">Inspecionar peça</button><button id="bench-rotate">Girar peça</button><button id="bench-back" hidden>Voltar à bancada</button><button id="bench-power" disabled>Ligar PC</button><button id="bench-finish" disabled>Concluir</button></div>`;
  d.querySelectorAll('button').forEach(b=>b.style.cssText='padding:10px;border:0;border-radius:5px;background:#f0a13b;color:#142333;font-weight:bold;cursor:pointer');
  const host=d.querySelector('#bench-stage'), msg=d.querySelector('#bench-message'), counter=d.querySelector('#bench-count');
  const sc=new T.Scene();sc.background=new T.Color(0x253746);const cam=new T.PerspectiveCamera(43,1,.1,100);cam.position.set(0,14,7);cam.lookAt(0,0,0);
@@ -212,11 +212,11 @@ function openWorkbench(d){
  const frame=new T.Group();world.add(frame);const dark=0x20252c,steel=0x8e969e,pcb=0x275e45;
  B(frame,4.45,.12,5.45,0,.15,0,steel);for(const x of [-2.2,2.2])B(frame,.12,.85,5.4,x,.57,0,dark);
  B(frame,4.4,.85,.16,0,.57,2.7,dark);B(frame,4.4,.85,.12,0,.57,-2.7,steel);
- B(frame,4.15,.05,5.15,0,.62,0,0x7d848a); B(frame,4.12,.02,5.12,0,.66,0,0xbfc5ca); // bandeja interna
+ B(frame,4.15,.05,5.15,0,.205,0,0x7d848a); B(frame,4.12,.02,5.12,0,.24,0,0xbfc5ca); // bandeja interna
  B(frame,.08,.62,4.82,-1.95,.62,0,0x98a1a9); // coluna de fixação
  for(let j=0;j<7;j++) B(frame,.08,.08,.08,-1.78,.34+j*.11,-1.5+j*.43,0xc8b07a); // espaçadores
- B(frame,1.18,.54,1.95,1.0,.42,1.38,0x464e55); B(frame,1.1,.5,1.87,1.0,.44,1.38,0x555f68); // compartimento SSD/HDD
- B(frame,1.48,.72,1.06,-.98,.53,2.02,0x454d54); B(frame,1.4,.68,.98,-.98,.56,2.02,0x58626a); // fonte
+ B(frame,1.18,.04,1.95,1.45,.27,1.38,0x464e55); // compartimento SSD/HDD
+ B(frame,1.48,.04,1.06,-.98,.27,2.02,0x454d54); // fonte
  B(frame,1.92,.04,.08,0,.36,-2.62,0x6d747b); // trilho frontal superior
  // Painel frontal estilo torre tradicional: baias, USB, áudio e power.
  for(const x of [-1.3,-.35])B(frame,.85,.13,.04,x,.75,2.8,0x10151a);
@@ -230,13 +230,13 @@ function openWorkbench(d){
  function fan(g,x,y,z,rad){cyl(g,rad,.09,x,y,z,dark);for(let i=0;i<7;i++){let a=i*Math.PI*2/7;const blade=B(g,rad*.24,.065,rad*.7,x+Math.sin(a)*rad*.44,y+.07,z+Math.cos(a)*rad*.44,0x8a959f);blade.rotation.y=a+.3;}cyl(g,rad*.22,.13,x,y+.08,z,steel);}
  fan(frame,1.55,.3,-1.95,.43);
  const specs=[
- ['Placa-mãe',[-5.3,.3,-1.65],[-.65,.27,-.35],[3.05,.12,3.75],'Fixe a placa-mãe nos espaçadores.'],
- ['CPU',[-5.3,.3,1.0],[-1.03,.44,-1.15],[.66,.12,.66],'Alinhe o processador com o socket.'],
- ['RAM',[-5.3,.3,2.65],[.38,.57,-.85],[.18,.45,1.55],'Encaixe a memória no slot DIMM.'],
- ['Cooler',[5.3,.3,-2.1],[-1.03,.69,-1.15],[.9,.42,.9],'Fixe o cooler sobre o processador.'],
+ ['Placa-mãe',[-5.3,.3,-1.65],[-.57,.36,-.35],[2.8,.12,3.5],'Fixe a placa-mãe nos espaçadores.'],
+ ['CPU',[-5.3,.3,1.0],[-.99,.55,-1.23],[.66,.12,.66],'Alinhe o processador com o socket.'],
+ ['RAM',[-5.3,.3,2.65],[.45,.73,-.87],[.18,.45,1.55],'Encaixe a memória no slot DIMM.'],
+ ['Cooler',[5.3,.3,-2.1],[-.99,.86,-1.23],[.9,.42,.9],'Fixe o cooler sobre o processador.'],
  ['SSD',[5.3,.3,-.15],[1.45,.39,1.3],[.95,.13,1.35],'Instale o SSD na baia de armazenamento.'],
  ['Fonte',[5.3,.3,2.15],[-.95,.59,2.02],[1.7,.62,1.05],'Instale a fonte na parte inferior.'],
- ['Cabo ATX / CPU',[-5.2,.3,-3.25],[.57,.48,.15],[1.15,.18,1.0],'Conecte a alimentação ATX e CPU.'],
+ ['Cabo ATX / CPU',[-6.85,.3,-3.65],[.57,.48,.15],[1.15,.18,1.0],'Conecte a alimentação ATX e CPU.'],
  ['Cabos SATA',[5.2,.3,3.65],[.92,.48,.65],[1.05,.18,1.0],'Conecte os cabos SATA de dados e energia.']];
  const parts=[],targets=[],done=new Set();let selected=null,inspecting=false,drag=null,orientation=0,powered=false,preview=null;
  function make(i){const g=new T.Group();const [w,h,l]=specs[i][3];
@@ -303,22 +303,26 @@ function openWorkbench(d){
  }
  return g;}
  function tube(g,points,c,rad=.035){const mesh=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p))),24,rad,8,false),surfaceMaterial(c,.1,.1,.1));g.add(mesh);return mesh;}
- specs.forEach((s,i)=>{const g=make(i);g.position.set(...s[1]);world.add(g);g.userData.index=i;parts.push(g);const t=new T.Mesh(new T.BoxGeometry(s[3][0]+.12,.045,s[3][2]+.12),new T.MeshBasicMaterial({color:0xffc14d,transparent:true,opacity:.38,depthWrite:false}));t.position.set(s[2][0],s[2][1]+.03,s[2][2]);world.add(t);targets.push(t);});
+ specs.forEach((s,i)=>{const g=make(i);g.position.set(...s[1]);world.add(g);g.userData.index=i;parts.push(g);const t=new T.Mesh(new T.BoxGeometry(s[3][0]+.12,.045,s[3][2]+.12),new T.MeshBasicMaterial({color:0xffc14d,transparent:true,opacity:.48,depthWrite:false,depthTest:false}));t.position.set(s[2][0],s[2][1]+.03,s[2][2]);t.renderOrder=99;const edge=new T.LineSegments(new T.EdgesGeometry(t.geometry),new T.LineBasicMaterial({color:0xffe000,depthTest:false}));edge.renderOrder=100;t.add(edge);world.add(t);targets.push(t);});
  // Braços e mãos voxel, vistos do ponto de vista do aluno.
  const arms=new T.Group();world.add(arms);for(const x of [-2.8,2.8]){const a=B(arms,.78,.55,2.05,x,.45,4.1,0xf7941d);a.rotation.y=x<0?-.28:.28;B(arms,.6,.45,.78,x*.86,.49,3.05,0xc9956e);B(arms,.22,.3,.38,x*.86+(x<0?.34:-.34),.47,2.85,0xc9956e);}
- const labels=specs.map((s,i)=>{const el=document.createElement('button');el.textContent=s[0];el.style.cssText='position:absolute;transform:translate(-50%,-50%);padding:5px 8px;background:#132c43dd;color:white;border:1px solid #7893a7;border-radius:5px;font-size:clamp(10px,1.25vw,14px);touch-action:none;cursor:pointer';host.append(el);el.onclick=()=>{if(!done.has(i))inspect(i);};return el;});
+ const labels=specs.map((s,i)=>{const el=document.createElement('button');el.textContent=s[0];el.style.cssText='position:absolute;transform:translate(-50%,-50%);padding:5px 8px;background:#132c43dd;color:white;border:1px solid #7893a7;border-radius:5px;font-size:clamp(10px,1.25vw,14px);touch-action:none;cursor:pointer';host.append(el);el.style.pointerEvents="none";return el;});
  const ray=new T.Raycaster(),pointer=new T.Vector2(),plane=new T.Plane(new T.Vector3(0,1,0),-.65),point=new T.Vector3();const cv=r.domElement;
  function setRay(e){const q=cv.getBoundingClientRect();pointer.set((e.clientX-q.left)/q.width*2-1,-(e.clientY-q.top)/q.height*2+1);ray.setFromCamera(pointer,cam);}
- function hit(e){setRay(e);const hits=ray.intersectObjects(parts.filter((_,i)=>!done.has(i)),true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!parts.includes(o))o=o.parent;return parts.indexOf(o);}
- function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Arraste a peça até a área amarela. Clique no rótulo para inspecionar em 3D.`;targets.forEach((t,i)=>t.visible=!inspecting&&i===next);d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
+ function hit(e){setRay(e);sc.updateMatrixWorld(true);const next=specs.findIndex((_,i)=>!done.has(i));if(next>=0&&ray.intersectObject(parts[next],true).length)return next;const hits=ray.intersectObjects(parts.filter((_,i)=>!done.has(i)),true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!parts.includes(o))o=o.parent;return parts.indexOf(o);}
+ function overTarget(e,i){if(i==null||done.has(i))return false;setRay(e);const t=specs[i][2],v=new T.Vector3();if(!ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-t[1]-.03),v))return false;const w=specs[i][3];return Math.abs(v.x-t[0])<=Math.max(w[0]/2+.35,.65)&&Math.abs(v.z-t[2])<=Math.max(w[2]/2+.35,.65);}
+ function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Arraste a peça até a área amarela. Ou clique na peça e depois no alvo amarelo.`;targets.forEach((t,i)=>{t.visible=!inspecting&&i===next;t.material.color.setHex(0xffc14d);});d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
  function inspect(i){if(inspecting)leaveInspect();sfxClick();selected=i;inspecting=true;world.visible=false;preview=make(i);sc.add(preview);const sz=new T.Box3().setFromObject(preview).getSize(new T.Vector3());preview.scale.setScalar(4/Math.max(sz.x,sz.y,sz.z));preview.rotation.set(.35,.5,0);cam.position.set(0,5,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=false;msg.textContent=specs[i][0]+' — arraste para rotacionar. Use Voltar à bancada para encaixar.';}
  function leaveInspect(){if(preview){sc.remove(preview);free(preview);preview=null;}inspecting=false;world.visible=true;cam.position.set(0,14,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=true;text();}
  function free(g){g.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map)o.material.map.dispose();o.material.dispose();}});}
  function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];const dist=Math.hypot(g.position.x-target[0],g.position.z-target[2]);const snap=i===0?1.55:i>=6?1.7:1.02;if(i!==next||dist>snap){sfxError();g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste mais perto da área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
  sfxSuccess();g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.55,.68,1.4],[-1.56,.56,-1.55],[-1.03,.5,-1.15]],dark,.05);tube(world,[[-.95,.69,2],[-.25,.6,1.95],[.45,.54,.95],[.55,.48,.15]],dark,.045);tube(world,[[-.95,.72,2],[-.72,.76,1.28],[-.84,.7,.24],[-.84,.54,-1.25]],0xe1c45b,.02);}else{tube(world,[[.5,.43,.65],[.9,.46,.74],[1.45,.46,1.75]],0xb93c36,.032);tube(world,[[-.95,.65,2],[-.15,.58,2.2],[.58,.54,2.02],[1.45,.46,1.75]],dark,.03);tube(world,[[1.36,.46,1.72],[1.22,.42,1.45],[1.06,.45,.98],[.92,.48,.65]],0xcd4c44,.022);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;}
- cv.onpointerdown=e=>{if(e.button!==0)return;cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};msg.style.color='#fff0ad';msg.textContent='Peça selecionada: '+specs[i][0]+'. Arraste até a área amarela.';sfxClick();}};
- cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>4)drag.moved=true;if(drag.moved){setRay(e);if(ray.ray.intersectPlane(plane,point)){parts[drag.i].position.copy(point);const target=specs[drag.i][2];const dist=Math.hypot(parts[drag.i].position.x-target[0],parts[drag.i].position.z-target[2]);const snap=drag.i===0?1.55:drag.i>=6?1.7:1.02;targets.forEach((t,k)=>{if(k===drag.i||k===specs.findIndex((_,n)=>!done.has(n)))t.material.opacity=.38;});if(dist<snap*1.1 && drag.i===specs.findIndex((_,n)=>!done.has(n)))targets[drag.i].material.opacity=.62;}}};
- cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved)place(a.i);else {selected=a.i;msg.style.color='#fff0ad';msg.textContent='Peça selecionada: '+specs[a.i][0]+'. Arraste até a área amarela ou clique no rótulo para inspecionar.';}};cv.onpointercancel=()=>{if(drag&&drag.i>=0)parts[drag.i].position.set(...specs[drag.i][1]);drag=null;};
+ function movePiece(e,i){setRay(e);const t=specs[i][2];if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-t[1]-.03),point)){parts[i].position.set(point.x,Math.max(t[1]+.35,1.1),point.z);const ok=overTarget(e,i)&&i===specs.findIndex((_,n)=>!done.has(n));targets[i].material.color.setHex(ok?0x39ed75:0xffc14d);}}
+ cv.onpointerdown=e=>{if(e.button!==0)return;e.preventDefault();cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}if(selected!==null&&overTarget(e,selected)){parts[selected].position.set(...specs[selected][2]);place(selected);selected=null;return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};msg.textContent='Selecionada: '+specs[i][0]+'. Arraste ou clique na área amarela.';sfxClick();}};
+ cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>4)drag.moved=true;if(drag.moved)movePiece(e,drag.i);};
+ cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved){movePiece(e,a.i);if(overTarget(e,a.i))parts[a.i].position.set(...specs[a.i][2]);else parts[a.i].position.set(99,1,99);place(a.i);selected=null;}else{selected=a.i;msg.textContent='Selecionada: '+specs[a.i][0]+'. Clique no alvo amarelo ou arraste.';}};
+ cv.onpointercancel=cv.onlostpointercapture=()=>{if(drag&&drag.i>=0&&!done.has(drag.i)){parts[drag.i].position.set(...specs[drag.i][1]);targets[drag.i].material.color.setHex(0xffc14d);}drag=null;};
+ d.querySelector('#bench-inspect').onclick=()=>{if(!inspecting){const i=selected??specs.findIndex((_,n)=>!done.has(n));if(i>=0&&!done.has(i))inspect(i);}};
  d.querySelector('#bench-back').onclick=()=>{sfxClick();leaveInspect();};d.querySelector('#bench-rotate').onclick=()=>{sfxClick();if(inspecting)preview.rotation.y+=Math.PI/2;else if(selected!==null&&!done.has(selected))parts[selected].rotation.y+=Math.PI/2;};
  d.querySelector('#bench-power').onclick=()=>{if(done.size!==8)return;powered=true;sfxPower();led.material.color.setHex(0x6aff98);led.material.emissive.setHex(0x37b862);led.material.emissiveIntensity=1;text();msg.textContent='✓ Teste de energia simulado: LED ligado. Montagem concluída.';};
  let raf;function draw(){const w=host.clientWidth,h=host.clientHeight;if(w&&h){if(r.domElement.width!==Math.round(w*r.getPixelRatio())||r.domElement.height!==Math.round(h*r.getPixelRatio())){r.setSize(w,h,false);cam.aspect=w/h;cam.fov=T.MathUtils.radToDeg(2*Math.atan(Math.max(Math.tan(T.MathUtils.degToRad(43/2)),8.6/(15.6*(w/h)))));cam.updateProjectionMatrix();}r.render(sc,cam);labels.forEach((el,i)=>{el.hidden=inspecting||done.has(i)||(drag&&drag.i===i);if(!el.hidden){const v=new T.Vector3(...specs[i][1]);v.z+=.7;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});}raf=requestAnimationFrame(draw);}text();draw();
@@ -380,7 +384,7 @@ function interact(){
     d.querySelector('#gd').onclick=()=>{ state.greeted=true; d.innerHTML='<b style="color:#f7941d">PORTEIRO</b><p>Perfeito! Entrada liberada. Siga pelo corredor até o atendimento para realizar sua matrícula.</p><p><button id="ok" style="padding:12px">Continuar</button></p>'; showMission('Entre no prédio, vá ao atendimento e realize sua matrícula.'); d.querySelector('#ok').onclick=()=>closeDialog(d); };
     return;
   }
-  if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0) && (!state.lessonDone || !state.assemblyDone)){
+  if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0)){
     state.satTI=true; player.g.position.set(world.marks.tiSeat.x,-.25,world.marks.tiSeat.z); player.g.rotation.y=Math.PI; player.legs.forEach(l=>l.rotation.x=-Math.PI/2); player.arms.forEach(a=>a.rotation.x=-.65);
     const d=createDialog('SALA DE TI',`<p>Muito bem! Você encontrou sua bancada. Agora escolha uma atividade disponível.</p><p><button id="sitok" style="padding:12px">Abrir painel de atividades</button></p>`);
     showMission('Você está na sala de TI. Escolha uma atividade no painel.');
