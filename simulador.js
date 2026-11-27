@@ -83,6 +83,12 @@ const receptionNpcs=[npc,npc2], patioNpcs=[canteenNpc1,canteenNpc2,tableNpc1,tab
 
 const professor=detailedPerson(-22.5,20.8,{shirt:0x174e80,accent:0xf7941d,badge:true,hair:0x352820}); professor.g.rotation.y=Math.PI;
 const state={running:false, dialog:false, greeted:false, enrolled:false, arrivedTI:false, satTI:false, lessonDone:false, assemblyDone:false, studentName:'', camDist:8.2};
+let audioCtx=null;
+function tone(freq=440,dur=.08,type='sine',vol=.03,when=0){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime+when,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+dur+.02);}catch(e){}}
+function sfxClick(){tone(560,.04,'triangle',.028,0);tone(720,.045,'triangle',.02,.03);}
+function sfxSuccess(){tone(520,.06,'triangle',.03,0);tone(660,.08,'triangle',.032,.05);tone(880,.11,'triangle',.028,.11);}
+function sfxError(){tone(240,.08,'sawtooth',.025,0);tone(170,.12,'square',.02,.06);}
+function sfxPower(){tone(320,.06,'sine',.03,0);tone(510,.06,'sine',.03,.06);tone(780,.12,'triangle',.028,.12);}
 const keys=new Set(); let last=performance.now(), walk=0;
 let moveJoy={x:0,y:0,active:false};
 const mobile = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -149,12 +155,48 @@ function componentArt(i){
 }
 
 
+
+function openTiMenu(){
+ root.querySelector('#tj-mission').parentElement.querySelector('b').textContent='SALA DE TI';
+ showMission('Escolha uma atividade da sala de TI. Atividades concluídas podem ser refeitas.');
+ const day1Label=state.lessonDone?'Refazer atividade':'Iniciar atividade';
+ const day2Unlocked=state.lessonDone, day2Label=state.assemblyDone?'Refazer atividade':'Iniciar atividade';
+ const d=createDialog('PAINEL DE ATIVIDADES — SALA DE TI',
+  `<p>Selecione uma atividade. Ao concluir uma, a próxima é liberada. Você também pode refazer qualquer atividade já concluída.</p>
+   <div style="display:grid;gap:12px;margin-top:14px">
+    <div style="background:#0c2140;border:1px solid #55779b;border-radius:8px;padding:12px">
+      <b style="color:#ffb04f">Dia 1 — Componentes do computador</b>
+      <p style="margin:8px 0">Aprenda as peças principais e responda às perguntas da aula.</p>
+      <small>Status: <b style="color:${state.lessonDone?'#8ef0a8':'#fff0ad'}">${state.lessonDone?'Concluída':'Disponível'}</b></small>
+      <div style="margin-top:10px"><button id="act1" style="padding:10px 12px">${day1Label}</button></div>
+    </div>
+    <div style="background:#0c2140;border:1px solid #55779b;border-radius:8px;padding:12px;opacity:${day2Unlocked?1:.65}">
+      <b style="color:#ffb04f">Dia 2 — Montagem do computador</b>
+      <p style="margin:8px 0">Monte o PC na bancada, conecte as peças e ligue o computador.</p>
+      <small>Status: <b style="color:${state.assemblyDone?'#8ef0a8':day2Unlocked?'#fff0ad':'#ff9b9b'}">${state.assemblyDone?'Concluída':day2Unlocked?'Disponível':'Bloqueada'}</b></small>
+      <div style="margin-top:10px"><button id="act2" style="padding:10px 12px" ${day2Unlocked?'':'disabled'}>${day2Unlocked?day2Label:'Concluir Dia 1 primeiro'}</button></div>
+    </div>
+    <div style="background:#0c2140;border:1px solid #55779b;border-radius:8px;padding:12px;opacity:.5">
+      <b style="color:#ffb04f">Próximas atividades</b>
+      <p style="margin:8px 0">Diagnóstico, manutenção e teste final.</p>
+      <small>Status: <b style="color:#ff9b9b">Bloqueada</b></small>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="leaveSeat" style="padding:10px 12px">Levantar da bancada</button>
+    </div>
+   </div>`);
+ d.querySelectorAll('button').forEach(b=>b.style.cssText='padding:10px 12px;background:#f7941d;border:0;border-radius:6px;color:#102849;font-weight:bold;cursor:pointer');
+ d.querySelector('#act1').onclick=()=>{sfxClick(); lessonIndex=0; closeDialog(d); startLesson();};
+ const act2=d.querySelector('#act2'); if(act2&&!act2.disabled) act2.onclick=()=>{sfxClick(); closeDialog(d); startAssembly();};
+ d.querySelector('#leaveSeat').onclick=()=>{sfxClick(); closeDialog(d); state.satTI=false; player.g.position.set(-23.62,.1,18); player.g.rotation.y=0; player.legs.forEach(l=>l.rotation.x=0); player.arms.forEach(a=>a.rotation.x=0); showMission(state.assemblyDone?'Dia 2 concluído! Você pode voltar à bancada para refazer atividades.':state.lessonDone?'Dia 1 concluído! Volte à bancada para continuar ou refazer atividades.':'Sente-se novamente na bancada para escolher uma atividade.');};
+}
+
 function startAssembly(){
  if(state.assemblyDone)return;
  root.querySelector('#tj-mission').parentElement.querySelector('b').textContent='MISSÃO 03 — DIA 2';
  showMission('Monte o computador na bancada de manutenção.');
- const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Vamos montar um computador em uma bancada de manutenção. Trabalhe com o equipamento desligado. Clique nas peças para inspecionar e arraste cada uma até o encaixe destacado.</p><button style="padding:12px">Iniciar montagem</button>');
- d.querySelector('button').onclick=()=>openWorkbench(d);
+ const d=createDialog('DIA 2 — MONTAGEM DO COMPUTADOR','<p>Vamos montar um computador em uma bancada de manutenção. Trabalhe com o equipamento desligado. Arraste cada peça até o encaixe destacado. Use os rótulos das peças para inspecioná-las em 3D quando quiser.</p><button style="padding:12px">Iniciar montagem</button>');
+ d.querySelector('button').onclick=()=>{sfxClick();openWorkbench(d);};
 }
 function openWorkbench(d){
  disposePartViewer();
@@ -171,6 +213,11 @@ function openWorkbench(d){
  B(frame,4.45,.12,5.45,0,.15,0,steel);for(const x of [-2.2,2.2])B(frame,.12,.85,5.4,x,.57,0,dark);
  B(frame,4.4,.85,.16,0,.57,2.7,dark);B(frame,4.4,.85,.12,0,.57,-2.7,steel);
  B(frame,4.15,.05,5.15,0,.62,0,0x7d848a); B(frame,4.12,.02,5.12,0,.66,0,0xbfc5ca); // bandeja interna
+ B(frame,.08,.62,4.82,-1.95,.62,0,0x98a1a9); // coluna de fixação
+ for(let j=0;j<7;j++) B(frame,.08,.08,.08,-1.78,.34+j*.11,-1.5+j*.43,0xc8b07a); // espaçadores
+ B(frame,1.18,.54,1.95,1.0,.42,1.38,0x464e55); B(frame,1.1,.5,1.87,1.0,.44,1.38,0x555f68); // compartimento SSD/HDD
+ B(frame,1.48,.72,1.06,-.98,.53,2.02,0x454d54); B(frame,1.4,.68,.98,-.98,.56,2.02,0x58626a); // fonte
+ B(frame,1.92,.04,.08,0,.36,-2.62,0x6d747b); // trilho frontal superior
  // Painel frontal estilo torre tradicional: baias, USB, áudio e power.
  for(const x of [-1.3,-.35])B(frame,.85,.13,.04,x,.75,2.8,0x10151a);
  for(let i=0;i<2;i++)B(frame,.23,.12,.045,.65+i*.38,.77,2.8,steel);
@@ -183,7 +230,7 @@ function openWorkbench(d){
  function fan(g,x,y,z,rad){cyl(g,rad,.09,x,y,z,dark);for(let i=0;i<7;i++){let a=i*Math.PI*2/7;const blade=B(g,rad*.24,.065,rad*.7,x+Math.sin(a)*rad*.44,y+.07,z+Math.cos(a)*rad*.44,0x8a959f);blade.rotation.y=a+.3;}cyl(g,rad*.22,.13,x,y+.08,z,steel);}
  fan(frame,1.55,.3,-1.95,.43);
  const specs=[
- ['Placa-mãe',[-5.3,.3,-1.65],[-.65,.27,-.35],[2.8,.12,3.5],'Fixe a placa-mãe nos espaçadores.'],
+ ['Placa-mãe',[-5.3,.3,-1.65],[-.65,.27,-.35],[3.05,.12,3.75],'Fixe a placa-mãe nos espaçadores.'],
  ['CPU',[-5.3,.3,1.0],[-1.03,.44,-1.15],[.66,.12,.66],'Alinhe o processador com o socket.'],
  ['RAM',[-5.3,.3,2.65],[.38,.57,-.85],[.18,.45,1.55],'Encaixe a memória no slot DIMM.'],
  ['Cooler',[5.3,.3,-2.1],[-1.03,.69,-1.15],[.9,.42,.9],'Fixe o cooler sobre o processador.'],
@@ -263,19 +310,19 @@ function openWorkbench(d){
  const ray=new T.Raycaster(),pointer=new T.Vector2(),plane=new T.Plane(new T.Vector3(0,1,0),-.65),point=new T.Vector3();const cv=r.domElement;
  function setRay(e){const q=cv.getBoundingClientRect();pointer.set((e.clientX-q.left)/q.width*2-1,-(e.clientY-q.top)/q.height*2+1);ray.setFromCamera(pointer,cam);}
  function hit(e){setRay(e);const hits=ray.intersectObjects(parts.filter((_,i)=>!done.has(i)),true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!parts.includes(o))o=o.parent;return parts.indexOf(o);}
- function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Clique para ampliar; arraste até a área amarela para encaixar.`;targets.forEach((t,i)=>t.visible=!inspecting&&i===next);d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
- function inspect(i){if(inspecting)leaveInspect();selected=i;inspecting=true;world.visible=false;preview=make(i);sc.add(preview);const sz=new T.Box3().setFromObject(preview).getSize(new T.Vector3());preview.scale.setScalar(4/Math.max(sz.x,sz.y,sz.z));preview.rotation.set(.35,.5,0);cam.position.set(0,5,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=false;msg.textContent=specs[i][0]+' — arraste para rotacionar. Volte à bancada para encaixar.';}
+ function text(){counter.textContent=`${done.size}/8`;const next=specs.findIndex((_,i)=>!done.has(i));msg.style.color='white';msg.textContent=next<0?'Montagem completa. Pressione Ligar PC.':`Etapa ${next+1}: ${specs[next][4]} Arraste a peça até a área amarela. Clique no rótulo para inspecionar em 3D.`;targets.forEach((t,i)=>t.visible=!inspecting&&i===next);d.querySelector('#bench-power').disabled=done.size!==8||powered;d.querySelector('#bench-finish').disabled=!powered;}
+ function inspect(i){if(inspecting)leaveInspect();sfxClick();selected=i;inspecting=true;world.visible=false;preview=make(i);sc.add(preview);const sz=new T.Box3().setFromObject(preview).getSize(new T.Vector3());preview.scale.setScalar(4/Math.max(sz.x,sz.y,sz.z));preview.rotation.set(.35,.5,0);cam.position.set(0,5,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=false;msg.textContent=specs[i][0]+' — arraste para rotacionar. Use Voltar à bancada para encaixar.';}
  function leaveInspect(){if(preview){sc.remove(preview);free(preview);preview=null;}inspecting=false;world.visible=true;cam.position.set(0,14,7);cam.lookAt(0,0,0);d.querySelector('#bench-back').hidden=true;text();}
  function free(g){g.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map)o.material.map.dispose();o.material.dispose();}});}
- function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];const dist=Math.hypot(g.position.x-target[0],g.position.z-target[2]);const snap=i>=6?1.7:.92;if(i!==next||dist>snap){g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste mais perto da área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
- g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.55,.68,1.4],[-1.56,.56,-1.55],[-1.03,.5,-1.15]],dark,.05);tube(world,[[-.95,.69,2],[-.25,.6,1.95],[.45,.54,.95],[.55,.48,.15]],dark,.045);tube(world,[[-.95,.72,2],[-.72,.76,1.28],[-.84,.7,.24],[-.84,.54,-1.25]],0xe1c45b,.02);}else{tube(world,[[.5,.43,.65],[.9,.46,.74],[1.45,.46,1.75]],0xb93c36,.032);tube(world,[[-.95,.65,2],[-.15,.58,2.2],[.58,.54,2.02],[1.45,.46,1.75]],dark,.03);tube(world,[[1.36,.46,1.72],[1.22,.42,1.45],[1.06,.45,.98],[.92,.48,.65]],0xcd4c44,.022);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;}
- cv.onpointerdown=e=>{if(e.button!==0)return;cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};}};
- cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){setRay(e);if(ray.ray.intersectPlane(plane,point))parts[drag.i].position.copy(point);}};
- cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved)place(a.i);else inspect(a.i);};cv.onpointercancel=()=>{if(drag&&drag.i>=0)parts[drag.i].position.set(...specs[drag.i][1]);drag=null;};
- d.querySelector('#bench-back').onclick=leaveInspect;d.querySelector('#bench-rotate').onclick=()=>{if(inspecting)preview.rotation.y+=Math.PI/2;else if(selected!==null&&!done.has(selected))parts[selected].rotation.y+=Math.PI/2;};
- d.querySelector('#bench-power').onclick=()=>{if(done.size!==8)return;powered=true;led.material.color.setHex(0x6aff98);led.material.emissive.setHex(0x37b862);led.material.emissiveIntensity=1;text();msg.textContent='✓ Teste de energia simulado: LED ligado. Montagem concluída.';};
+ function place(i){const next=specs.findIndex((_,n)=>!done.has(n));const target=specs[i][2],g=parts[i];const dist=Math.hypot(g.position.x-target[0],g.position.z-target[2]);const snap=i===0?1.55:i>=6?1.7:1.02;if(i!==next||dist>snap){sfxError();g.position.set(...specs[i][1]);g.rotation.set(0,0,0);msg.textContent=i!==next?'Peça fora da sequência. Instale '+specs[next][0]+' primeiro.':'Encaixe incorreto. Arraste mais perto da área amarela.';msg.style.color='#ff7777';if(next>=0){targets[next].material.color.setHex(0xff5555);setTimeout(()=>{if(!done.has(next))targets[next].material.color.setHex(0xffc14d);},650);}return;}
+ sfxSuccess();g.position.set(...target);g.rotation.set(0,0,0);done.add(i);if(i>=6){g.visible=false;if(i===6){tube(world,[[-.95,.76,2],[-1.55,.68,1.4],[-1.56,.56,-1.55],[-1.03,.5,-1.15]],dark,.05);tube(world,[[-.95,.69,2],[-.25,.6,1.95],[.45,.54,.95],[.55,.48,.15]],dark,.045);tube(world,[[-.95,.72,2],[-.72,.76,1.28],[-.84,.7,.24],[-.84,.54,-1.25]],0xe1c45b,.02);}else{tube(world,[[.5,.43,.65],[.9,.46,.74],[1.45,.46,1.75]],0xb93c36,.032);tube(world,[[-.95,.65,2],[-.15,.58,2.2],[.58,.54,2.02],[1.45,.46,1.75]],dark,.03);tube(world,[[1.36,.46,1.72],[1.22,.42,1.45],[1.06,.45,.98],[.92,.48,.65]],0xcd4c44,.022);}}text();msg.style.color='#89f4ad';msg.textContent='✓ '+specs[i][0]+' instalado. '+msg.textContent;}
+ cv.onpointerdown=e=>{if(e.button!==0)return;cv.setPointerCapture(e.pointerId);if(inspecting){drag={i:-1,x:e.clientX,y:e.clientY,moved:false};return;}const i=hit(e);if(i!==null&&i>=0){selected=i;drag={i,x:e.clientX,y:e.clientY,moved:false};msg.style.color='#fff0ad';msg.textContent='Peça selecionada: '+specs[i][0]+'. Arraste até a área amarela.';sfxClick();}};
+ cv.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(inspecting){preview.rotation.y+=dx*.012;preview.rotation.x+=dy*.012;drag.x=e.clientX;drag.y=e.clientY;return;}if(Math.hypot(dx,dy)>4)drag.moved=true;if(drag.moved){setRay(e);if(ray.ray.intersectPlane(plane,point)){parts[drag.i].position.copy(point);const target=specs[drag.i][2];const dist=Math.hypot(parts[drag.i].position.x-target[0],parts[drag.i].position.z-target[2]);const snap=drag.i===0?1.55:drag.i>=6?1.7:1.02;targets.forEach((t,k)=>{if(k===drag.i||k===specs.findIndex((_,n)=>!done.has(n)))t.material.opacity=.38;});if(dist<snap*1.1 && drag.i===specs.findIndex((_,n)=>!done.has(n)))targets[drag.i].material.opacity=.62;}}};
+ cv.onpointerup=e=>{if(!drag)return;const a=drag;drag=null;if(inspecting)return;if(a.moved)place(a.i);else {selected=a.i;msg.style.color='#fff0ad';msg.textContent='Peça selecionada: '+specs[a.i][0]+'. Arraste até a área amarela ou clique no rótulo para inspecionar.';}};cv.onpointercancel=()=>{if(drag&&drag.i>=0)parts[drag.i].position.set(...specs[drag.i][1]);drag=null;};
+ d.querySelector('#bench-back').onclick=()=>{sfxClick();leaveInspect();};d.querySelector('#bench-rotate').onclick=()=>{sfxClick();if(inspecting)preview.rotation.y+=Math.PI/2;else if(selected!==null&&!done.has(selected))parts[selected].rotation.y+=Math.PI/2;};
+ d.querySelector('#bench-power').onclick=()=>{if(done.size!==8)return;powered=true;sfxPower();led.material.color.setHex(0x6aff98);led.material.emissive.setHex(0x37b862);led.material.emissiveIntensity=1;text();msg.textContent='✓ Teste de energia simulado: LED ligado. Montagem concluída.';};
  let raf;function draw(){const w=host.clientWidth,h=host.clientHeight;if(w&&h){if(r.domElement.width!==Math.round(w*r.getPixelRatio())||r.domElement.height!==Math.round(h*r.getPixelRatio())){r.setSize(w,h,false);cam.aspect=w/h;cam.fov=T.MathUtils.radToDeg(2*Math.atan(Math.max(Math.tan(T.MathUtils.degToRad(43/2)),8.6/(15.6*(w/h)))));cam.updateProjectionMatrix();}r.render(sc,cam);labels.forEach((el,i)=>{el.hidden=inspecting||done.has(i)||(drag&&drag.i===i);if(!el.hidden){const v=new T.Vector3(...specs[i][1]);v.z+=.7;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});}raf=requestAnimationFrame(draw);}text();draw();
- d.querySelector('#bench-finish').onclick=()=>{if(!powered)return;cancelAnimationFrame(raf);free(world);if(preview)free(preview);r.dispose();state.assemblyDone=true;state.satTI=false;closeDialog(d);player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);showMission('Dia 2 concluído! Computador montado e testado.');};
+ d.querySelector('#bench-finish').onclick=()=>{if(!powered)return;sfxSuccess();cancelAnimationFrame(raf);free(world);if(preview)free(preview);r.dispose();state.assemblyDone=true;closeDialog(d);showMission('Dia 2 concluído! Computador montado e testado.');openTiMenu();};
 }
 
 let partViewer=null;
@@ -308,11 +355,11 @@ function mountPartViewer(host,i){
 }
 
 function startLesson(){
- if(state.lessonDone)return;
+ lessonIndex=0;
  root.querySelector('#tj-mission').parentElement.querySelector('b').textContent='MISSÃO 02 — DIA 1';
  showMission('Conheça os componentes do computador.');
  const d=createDialog('PROFESSOR DE TI','<p>Bem-vindo à primeira aula! Hoje vamos conhecer as peças do computador e suas funções.</p><button style="padding:12px">Começar aula</button>');
- d.querySelector('button').onclick=()=>renderComponent(d);
+ d.querySelector('button').onclick=()=>{sfxClick();renderComponent(d);};
 }
 function renderComponent(d){
  disposePartViewer();
@@ -320,14 +367,14 @@ function renderComponent(d){
  d.innerHTML=`<b style="color:#f7941d">DIA 1 · COMPONENTE ${lessonIndex+1}/${components.length}</b><div class="part-view" style="height:clamp(140px,30vh,270px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste a peça para girar em 3D. Use + e − para aproximar.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
  mountPartViewer(d.querySelector(".part-view"),lessonIndex);
  d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
- const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){feedback.textContent='Tente novamente. Leia a função da peça.';return;}
- d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;showMission('Dia 1 concluído! Sente-se novamente na bancada para iniciar o Dia 2 — montagem do computador.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. Agora vamos para o <b>Dia 2 — montagem do computador</b>.</p><button style="padding:12px">Ir para a prática</button>';d.querySelector('button').onclick=()=>{closeDialog(d);state.satTI=false;player.g.position.set(-23.62,.1,18);player.legs.forEach(l=>l.rotation.x=0);player.arms.forEach(a=>a.rotation.x=0);};};
+ const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){sfxError();feedback.textContent='Tente novamente. Leia a função da peça.';return;}
+ sfxSuccess();d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{sfxClick();lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;showMission('Dia 1 concluído! O Dia 2 — montagem do computador — foi liberado.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. O <b>Dia 2 — montagem do computador</b> foi liberado.</p><button style="padding:12px">Voltar ao painel de atividades</button>';d.querySelector('button').onclick=()=>{sfxClick();closeDialog(d);openTiMenu();};};
  });
 }
 
 function interact(){
   if(!state.running||state.dialog) return;
-  if(state.satTI){ if(!state.lessonDone) startLesson(); else if(!state.assemblyDone) startAssembly(); return; }
+  if(state.satTI){ openTiMenu(); return; }
   if(near(world.marks.doorman,2.2) && !state.greeted){
     const d=createDialog('PORTEIRO','<p>Bom dia! Seja bem-vindo ao Senac. Posso liberar sua entrada.</p><p><button id="gd" style="padding:12px">Bom dia!</button></p>');
     d.querySelector('#gd').onclick=()=>{ state.greeted=true; d.innerHTML='<b style="color:#f7941d">PORTEIRO</b><p>Perfeito! Entrada liberada. Siga pelo corredor até o atendimento para realizar sua matrícula.</p><p><button id="ok" style="padding:12px">Continuar</button></p>'; showMission('Entre no prédio, vá ao atendimento e realize sua matrícula.'); d.querySelector('#ok').onclick=()=>closeDialog(d); };
@@ -335,10 +382,9 @@ function interact(){
   }
   if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0) && (!state.lessonDone || !state.assemblyDone)){
     state.satTI=true; player.g.position.set(world.marks.tiSeat.x,-.25,world.marks.tiSeat.z); player.g.rotation.y=Math.PI; player.legs.forEach(l=>l.rotation.x=-Math.PI/2); player.arms.forEach(a=>a.rotation.x=-.65);
-    const intro = !state.lessonDone ? 'a aula prática de componentes do computador' : 'a prática do Dia 2 — montagem do computador';
-    const d=createDialog('SALA DE TI',`<p>Muito bem! Você encontrou sua bancada e sentou para iniciar ${intro}.</p><p><button id="sitok" style="padding:12px">Continuar</button></p>`);
-    showMission(!state.lessonDone ? 'Perfeito! Você já está na bancada. Agora vamos iniciar a aula de componentes do computador.' : 'Perfeito! Você já está na bancada. Agora vamos iniciar a montagem do computador.');
-    d.querySelector('#sitok').onclick=()=>{closeDialog(d); !state.lessonDone ? startLesson() : startAssembly();};
+    const d=createDialog('SALA DE TI',`<p>Muito bem! Você encontrou sua bancada. Agora escolha uma atividade disponível.</p><p><button id="sitok" style="padding:12px">Abrir painel de atividades</button></p>`);
+    showMission('Você está na sala de TI. Escolha uma atividade no painel.');
+    d.querySelector('#sitok').onclick=()=>{sfxClick();closeDialog(d); openTiMenu();};
     return;
   }
   if(near(world.marks.deskLeft,2.9) || near(world.marks.deskRight,2.9)){
@@ -384,7 +430,7 @@ function frame(now){
     }
     if(!state.greeted && near(world.marks.doorman,2.3)) hint.textContent=(mobile?'OK: falar com o porteiro':'Pressione E para falar com o porteiro');
     else if(state.greeted && !state.enrolled && (near(world.marks.deskLeft,2.9)||near(world.marks.deskRight,2.9))) hint.textContent=(mobile?'OK: falar no atendimento':'Pressione E para falar no atendimento');
-    else if(state.arrivedTI && !state.satTI && (!state.lessonDone || !state.assemblyDone) && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?(!state.lessonDone?'OK: sentar para a aula':'OK: sentar para montar'):(!state.lessonDone?'Pressione E para sentar na bancada':'Pressione E para iniciar a montagem')); 
+    else if(state.arrivedTI && !state.satTI && near(world.marks.tiSeat,2.0)) hint.textContent=(mobile?'OK: sentar e abrir atividades':'Pressione E para sentar e abrir atividades'); 
     else hint.textContent=(mobile?'Joystick: andar · OK: interagir':'WASD / setas: andar · E: interagir');
   }
   const indoors=state.running&&((Math.abs(p.x)<=9.25&&Math.abs(p.z)<=8.25)||(p.x<=-9.25&&p.x>=-35.2&&p.z>=-7.2&&p.z<=23.3)||(p.x>=9.25&&p.x<=16.3&&p.z>=1.95&&p.z<=7.4));
