@@ -238,7 +238,7 @@ function openWorkbench(d){
  ['Fonte',[5.3,.3,2.15],[-.95,.59,2.02],[1.7,.62,1.05],'Instale a fonte na parte inferior.'],
  ['Cabo ATX / CPU',[-6.85,.3,-3.65],[.57,.48,.15],[1.15,.18,1.0],'Conecte a alimentação ATX e CPU.'],
  ['Cabos SATA',[5.2,.3,3.65],[.92,.48,.65],[1.05,.18,1.0],'Conecte os cabos SATA de dados e energia.']];
- const parts=[],targets=[],done=new Set();let selected=null,inspecting=false,drag=null,orientation=0,powered=false,preview=null;let phase="assembly", external=null;const connected=new Set();
+ const parts=[],targets=[],done=new Set();let selected=null,inspecting=false,drag=null,orientation=0,powered=false,preview=null;let phase="assembly", external=null;const connected=new Set();let camTargetPos=null, camTargetLook=null, periphLabels=[], periphPanel=null, periphItems=[], periphCompLabels=[];
  function make(i){const g=new T.Group();const [w,h,l]=specs[i][3];
  if(i===0){
    B(g,w,h,l,0,0,0,pcb); // placa base
@@ -339,53 +339,87 @@ function openWorkbench(d){
  d.querySelector('#bench-back').onclick=()=>{sfxClick();leaveInspect();};d.querySelector('#bench-rotate').onclick=()=>{sfxClick();if(inspecting)preview.rotation.y+=Math.PI/2;else if(selected!==null&&!done.has(selected))parts[selected].rotation.y+=Math.PI/2;};
  const peripherals=[['Monitor','HDMI','Imagem'],['Teclado','USB','Digitação'],['Mouse','USB','Movimentação do cursor'],['Caixas de som','Áudio P2','Reprodução de áudio']];
  function showPeripherals(){
-   phase='peripherals';selected=null;drag=null;connected.clear();world.visible=false;if(external){sc.remove(external);free(external);}external=new T.Group();sc.add(external);cam.position.set(0,8.8,-13.8);cam.lookAt(1.8,2.2,0);
+   phase='peripherals';selected=null;drag=null;connected.clear();world.visible=false;
+   periphLabels.forEach(v=>v.el&&v.el.remove()); periphLabels=[]; periphCompLabels.forEach(v=>v.el&&v.el.remove()); periphCompLabels=[]; if(periphPanel){periphPanel.remove(); periphPanel=null;} periphItems=[];
+   if(external){sc.remove(external);free(external);}external=new T.Group();sc.add(external);
+   const overviewPos=new T.Vector3(.4,8.2,-14.2), overviewLook=new T.Vector3(.2,2.1,.4);
+   cam.position.copy(overviewPos); cam.lookAt(overviewLook); camTargetPos=overviewPos.clone(); camTargetLook=overviewLook.clone(); cam.userData.lookCurrent=overviewLook.clone();
    B(external,16,.35,9,0,-.22,0,0xa77d56);
-   const caseX=3.9, caseY=2.12, caseZ=0;
-   // Gabinete em visão traseira.
-   B(external,1.7,4.2,3.25,caseX,caseY,caseZ,0x252a30); B(external,1.6,4.05,3.08,caseX,caseY,caseZ,0x343a40);
-   B(external,1.62,3.96,.08,caseX,caseY,-1.59,0xc7ccd3);
-   const rearPanel=B(external,1.05,2.4,.05,caseX+.14,caseY+.18,-1.63,0xb9c1c9);
-   // fonte, ventoinha e slots traseiros
-   const psuVent=cyl(external,.6,.08,caseX+.25,caseY+1.22,-1.66,0x2a3138); psuVent.rotation.x=Math.PI/2;
-   for(let i=0;i<16;i++){const a=i/16*Math.PI*2;B(external,.06,.06,.035,caseX+.25+Math.cos(a)*.45,caseY+1.22+Math.sin(a)*.45,-1.675,0x6d7882);} 
-   B(external,.34,.2,.05,caseX-.45,caseY+1.1,-1.67,0x11171d); // PSU socket
-   B(external,.18,.18,.05,caseX-.35,caseY+1.58,-1.67,0x11171d); // switch
-   B(external,.18,1.95,.04,caseX-.43,caseY-.34,-1.67,0xb0b8c1); // slot column
-   for(let j=0;j<7;j++)B(external,.62,.19,.03,caseX+.1,caseY-1.2+j*.24,-1.68,0x5b636d);
-   B(external,.92,1.18,.045,caseX+.56,caseY-.2,-1.675,0x23292f); for(let j=0;j<96;j++)B(external,.035,.035,.03,caseX+.22+(j%12)*.055,caseY-.72+Math.floor(j/12)*.14,-1.69,0x97a3ad);
-   // conjunto I/O
-   B(external,.46,.82,.04,caseX-.17,caseY-.12,-1.67,0x8e98a3);
-   const hdmiPort=B(external,.22,.08,.07,caseX-.12,caseY+.02,-1.73,0xffc14d);
-   const usbKbPort=B(external,.18,.08,.07,caseX-.24,caseY-.24,-1.73,0xffc14d);
-   const usbMousePort=B(external,.18,.08,.07,caseX-.02,caseY-.24,-1.73,0xffc14d);
-   const audioPort=B(external,.14,.14,.07,caseX-.13,caseY-.52,-1.73,0xffc14d);
-   [hdmiPort,usbKbPort,usbMousePort,audioPort].forEach(m=>{m.renderOrder=90;const edge=new T.LineSegments(new T.EdgesGeometry(m.geometry),new T.LineBasicMaterial({color:0xffeb77,depthTest:false}));edge.renderOrder=91;m.add(edge);});
-   const portTargets=[hdmiPort,usbKbPort,usbMousePort,audioPort];
-   hdmiPort.userData={accept:0,label:'HDMI'}; usbKbPort.userData={accept:1,label:'USB do teclado'}; usbMousePort.userData={accept:2,label:'USB do mouse'}; audioPort.userData={accept:3,label:'Áudio P2'};
-   // painel frontal para LED e botão de power
-   B(external,1.7,4.12,.15,caseX,caseY,1.26,0x161a1f); for(const y of [3.65,3.25])B(external,1.38,.29,.05,caseX,y,1.36,0x30363c); for(let k=0;k<12;k++)B(external,1.16,.045,.045,caseX,.75+k*.095,1.36,0x0e1217); for(const x of [caseX-.34,caseX+.02])B(external,.23,.1,.055,x,2.78,1.37,0x8394a1);
-   const powerLed=B(external,.18,.18,.08,caseX,2.28,1.39,0x4a535b);
-   // periféricos sobre a bancada.
-   const monX=-4.25; B(external,4.9,2.8,.27,monX,3.0,-.55,0x202832); const monitorScreen=B(external,4.62,2.48,.035,monX,3.0,-.39,0x101820); B(external,.34,1.28,.45,monX,.84,-.55,0x303943); B(external,1.7,.16,.95,monX,.12,-.35,0x303943);
-   const kbX=-4.6; B(external,3.5,.16,1.15,kbX,.13,2.15,0x252d36); for(let y=0;y<5;y++)for(let x=0;x<15;x++)B(external,.18,.05,.16,kbX-1.55+x*.22,.24,1.7+y*.2,0x53616e); B(external,1.1,.055,.16,kbX,.25,2.55,0x78838d);
-   const mouseX=-1.9; const mouse=cyl(external,.43,.24,mouseX,.15,2.05,0x303943);mouse.scale.z=1.5;B(external,.08,.06,.2,mouseX,.3,1.9,0x9aa7b0);
-   const speakerXs=[-6.7,-2.25]; speakerXs.forEach(x=>{B(external,.78,1.6,.7,x,.8,-1.3,0x242c34);for(const [y,rad] of [[.57,.25],[1.13,.14]]){const m=cyl(external,rad,.065,x,y,-.9,0x141b22);m.rotation.x=Math.PI/2;}B(external,.065,.065,.035,x,.22,-.91,0x79d89a);});
+   const caseX=4.35, caseY=2.12, caseZ=-.35;
+   // Gabinete em visão traseira, sozinho e bem visível.
+   B(external,1.9,4.35,3.35,caseX,caseY,caseZ,0x1c2127); B(external,1.76,4.12,3.18,caseX,caseY,caseZ,0x2d343c);
+   B(external,1.72,4.02,.08,caseX,caseY,-1.97,0xc8ced5); B(external,1.1,2.55,.05,caseX+.18,caseY+.15,-2.01,0xb5bdc6);
+   const psuVent=cyl(external,.62,.08,caseX+.3,caseY+1.28,-2.05,0x222930); psuVent.rotation.x=Math.PI/2;
+   for(let i=0;i<18;i++){const a=i/18*Math.PI*2;B(external,.06,.06,.035,caseX+.3+Math.cos(a)*.46,caseY+1.28+Math.sin(a)*.46,-2.065,0x6d7882);} 
+   B(external,.34,.2,.05,caseX-.5,caseY+1.13,-2.06,0x11171d); B(external,.18,.18,.05,caseX-.38,caseY+1.62,-2.06,0x11171d); B(external,.18,2.05,.04,caseX-.48,caseY-.3,-2.06,0xb0b8c1);
+   for(let j=0;j<7;j++)B(external,.68,.2,.03,caseX+.16,caseY-1.28+j*.255,-2.07,0x59626c);
+   B(external,.95,1.25,.045,caseX+.62,caseY-.18,-2.065,0x23292f); for(let j=0;j<96;j++)B(external,.035,.035,.03,caseX+.27+(j%12)*.056,caseY-.74+Math.floor(j/12)*.145,-2.08,0x97a3ad);
+   // conjunto I/O traseiro
+   B(external,.52,.88,.04,caseX-.2,caseY-.12,-2.06,0x8e98a3);
+   function makePort(x,y,z,w,h,accept,label,sub){
+      const vis=B(external,w,h,.08,x,y,z,0xffc14d); vis.material.transparent=true; vis.material.opacity=.86; vis.renderOrder=90;
+      const edge=new T.LineSegments(new T.EdgesGeometry(vis.geometry),new T.LineBasicMaterial({color:0xfff1a6,depthTest:false})); edge.renderOrder=91; vis.add(edge);
+      const hit=new T.Mesh(new T.BoxGeometry(Math.max(.45,w*2.8),Math.max(.3,h*3.2),.32),new T.MeshBasicMaterial({transparent:true,opacity:0})); hit.position.copy(vis.position); external.add(hit);
+      vis.userData=hit.userData={accept,label,sub,visibleMesh:vis,hitMesh:hit}; return {vis,hit};
+   }
+   const hdmi=makePort(caseX-.14,caseY+.03,-2.13,.24,.1,0,'HDMI','Monitor');
+   const usbKb=makePort(caseX-.28,caseY-.26,-2.13,.19,.09,1,'USB','Teclado');
+   const usbMouse=makePort(caseX-.02,caseY-.26,-2.13,.19,.09,2,'USB','Mouse');
+   const audio=makePort(caseX-.14,caseY-.55,-2.13,.15,.15,3,'Áudio P2','Caixa de som');
+   const portTargets=[hdmi.vis,usbKb.vis,usbMouse.vis,audio.vis], portHitboxes=[hdmi.hit,usbKb.hit,usbMouse.hit,audio.hit];
+   const portByPiece=[]; portTargets.forEach(m=>portByPiece[m.userData.accept]=m);
+   // painel frontal simplificado para LED e botão de power
+   B(external,1.88,4.2,.14,caseX,caseY,1.05,0x13181d); for(const y of [3.68,3.28])B(external,1.48,.3,.05,caseX,y,1.14,0x30363c); for(let k=0;k<12;k++)B(external,1.2,.045,.045,caseX,.74+k*.1,1.14,0x0e1217); for(const x of [caseX-.34,caseX+.02])B(external,.23,.1,.055,x,2.78,1.15,0x8394a1);
+   const powerLed=B(external,.18,.18,.08,caseX,2.28,1.17,0x4a535b);
+   // periféricos em visão frontal.
+   const componentMeshes=[];
+   function registerComponent(root,id,name){root.userData.component=id; root.userData.name=name; const meshes=[]; root.traverse(o=>{if(o.isMesh){o.userData.component=id; meshes.push(o); componentMeshes.push(o);}}); periphItems.push({id,name,group:root,meshes,active:false,done:false}); return root;}
+   function makeCompLabel(text,obj,dy=.6){const el=document.createElement('div');el.textContent=text;el.style.cssText='position:absolute;transform:translate(-50%,-50%);padding:5px 10px;background:#102849dd;color:#fff;border:1px solid #ffd56b;border-radius:6px;font:12px Arial;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px #0006';host.append(el);periphCompLabels.push({el,obj,dy});return el;}
+   const monitorG=new T.Group(); external.add(monitorG); monitorG.position.set(-4.6,0,.25); B(monitorG,5.2,3.0,.3,0,3.1,0,0x202832); const monitorScreen=B(monitorG,4.86,2.66,.04,0,3.1,.16,0x101820); B(monitorG,.38,1.36,.48,0,.92,0,0x303943); B(monitorG,1.9,.18,1.0,0,.15,.14,0x303943); registerComponent(monitorG,0,'Monitor'); makeCompLabel('Monitor',monitorG,2.25);
+   const kbG=new T.Group(); external.add(kbG); kbG.position.set(-4.8,0,2.35); B(kbG,3.9,.18,1.35,0,.13,0,0x252d36); for(let y=0;y<5;y++)for(let x=0;x<15;x++)B(kbG,.18,.05,.16,-1.66+x*.235,.24,-.43+y*.205,0x53616e); B(kbG,1.12,.055,.16,0,.25,.43,0x78838d); registerComponent(kbG,1,'Teclado'); makeCompLabel('Teclado',kbG,.85);
+   const mouseG=new T.Group(); external.add(mouseG); mouseG.position.set(-2.1,0,2.18); const mouse=cyl(mouseG,.43,.24,0,.16,0,0x303943); mouse.scale.z=1.55; B(mouseG,.08,.06,.2,0,.3,-.15,0x9aa7b0); registerComponent(mouseG,2,'Mouse'); makeCompLabel('Mouse',mouseG,.75);
+   const speakerG=new T.Group(); external.add(speakerG); speakerG.position.set(-5.0,0,-1.45); const rel=[[-2.0,0],[2.0,0]]; rel.forEach(([x,z])=>{B(speakerG,.82,1.68,.72,x,.85,z,0x242c34);for(const [y,rad] of [[.58,.26],[1.16,.145]]){const m=cyl(speakerG,rad,.065,x,y,z+.36,0x141b22);m.rotation.x=Math.PI/2;}B(speakerG,.07,.07,.035,x,.22,z+.35,0x79d89a);}); registerComponent(speakerG,3,'Caixas de som'); makeCompLabel('Caixas de som',speakerG,1.55);
+   // caminhos dos cabos a partir dos periféricos frontais até a traseira do gabinete.
    const wirePaths=[
-     [[monX,.2,-.35],[-1.8,.12,-.85],[1.2,.5,-1.15],[caseX-.12,caseY+.02,-1.64]],
-     [[kbX-1.35,.16,2.1],[-2.6,.14,1.15],[.8,.55,-.95],[caseX-.24,caseY-.24,-1.64]],
-     [[mouseX,.16,1.78],[-.8,.14,1.0],[1.2,.55,-.88],[caseX-.02,caseY-.24,-1.64]],
-     [[-6.7,.22,-1.75],[-4.8,.12,-2.4],[-.8,.12,-2.45],[2.2,.6,-1.45],[caseX-.13,caseY-.52,-1.64]]
+     [[-4.6,.2,.3],[-3.9,.25,-.6],[-2.2,.45,-1.35],[.4,.6,-1.7],[2.6,.72,-1.95],[caseX-.14,caseY+.03,-2.02]],
+     [[-5.9,.17,2.35],[-4.8,.12,2.7],[-2.8,.18,1.85],[-.6,.38,.85],[1.7,.6,-.95],[caseX-.28,caseY-.26,-2.02]],
+     [[-2.1,.18,2.02],[-1.65,.14,1.8],[-.6,.18,1.15],[1.1,.45,-.25],[2.3,.62,-1.15],[caseX-.02,caseY-.26,-2.02]],
+     [[-7.0,.22,-1.45],[-6.2,.2,-2.45],[-4.2,.18,-2.8],[-1.0,.2,-2.85],[1.9,.45,-2.15],[caseX-.14,caseY-.55,-2.02]]
    ];
-   const panel=document.createElement('div');panel.style.cssText='position:absolute;top:10px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none';host.append(panel);
-   let chosen=null;
-   const status=document.createElement('div');status.style.cssText='width:100%;text-align:center;color:white;background:#102849dd;padding:8px;border-radius:6px';status.textContent='Selecione um periférico e clique na área amarela correspondente na traseira do gabinete.';panel.append(status);
-   const hint=document.createElement('div');hint.style.cssText='width:100%;text-align:center;color:#dce7f2;background:#0a1828cc;padding:6px;border-radius:6px;font-size:13px';hint.textContent='Monitor → HDMI · Teclado → USB · Mouse → USB · Caixa de som → Áudio P2';panel.append(hint);
-   const buttons=peripherals.map(([name,port],i)=>{const b=document.createElement('button');b.textContent=name;b.style.cssText='pointer-events:auto;padding:9px;background:#f7941d;color:#102849;border:0;border-radius:6px;font-weight:bold';b.onclick=()=>{if(connected.has(i))return;chosen=i;sfxClick();refreshTargets();status.textContent='Conecte '+name+': clique no conector amarelo '+port+' na traseira do gabinete.';buttons.forEach((v,j)=>v.style.outline=j===i?'3px solid white':'none');};panel.append(b);return b;});
-   function refreshTargets(){portTargets.forEach(m=>{if(connected.has(m.userData.accept)){m.visible=true;m.material.color.setHex(0x39ed75);m.material.opacity=.96;}else if(chosen===null){m.visible=true;m.material.color.setHex(0xffc14d);m.material.opacity=.78;}else{const active=m.userData.accept===chosen;m.visible=true;m.material.color.setHex(active?0xffeb66:0xc49c35);m.material.opacity=active?.98:.32;}});}refreshTargets();
-   external.userData.onPointerDown=(e)=>{setRay(e);const hits=ray.intersectObjects(portTargets,true);if(!hits.length){if(chosen!==null){sfxError();status.textContent='Clique em um conector amarelo na parte traseira do gabinete.';}return;}let obj=hits[0].object;while(obj.parent&&!portTargets.includes(obj))obj=obj.parent;if(!portTargets.includes(obj))return;if(chosen===null){sfxError();status.textContent='Selecione primeiro um periférico na barra superior.';return;}const i=chosen;if(obj.userData.accept!==i){sfxError();obj.material.color.setHex(0xff6565);status.textContent='Conector incorreto. Tente novamente no alvo amarelo certo.';setTimeout(refreshTargets,450);return;}connected.add(i);tube(external,wirePaths[i],i===0?0x27323d:i===3?0x37634b:0x20262c,.045);buttons[i].textContent='✓ '+peripherals[i][0];buttons[i].disabled=true;buttons[i].style.background='#8de3ac';buttons[i].style.outline='none';chosen=null;sfxSuccess();counter.textContent='8/8 · '+connected.size+'/4 periféricos';status.textContent=connected.size===4?'Todos os periféricos foram conectados. Pressione Ligar PC.':'Conectado corretamente! Selecione o próximo periférico.';refreshTargets();d.querySelector('#bench-power').disabled=connected.size!==4;};
-   counter.textContent='8/8 · 0/4 periféricos';msg.textContent='Montagem interna concluída! Agora conecte os periféricos na traseira do gabinete usando os alvos amarelos.';for(const id of ['bench-inspect','bench-rotate','bench-back'])d.querySelector('#'+id).hidden=true;d.querySelector('#bench-power').disabled=true;d.querySelector('#bench-finish').disabled=true;
-   d.querySelector('#bench-power').onclick=()=>{if(phase!=='peripherals'||connected.size!==4)return;phase='boot';powered=true;sfxPower();powerLed.material.color.setHex(0x6aff98);powerLed.material.emissive.setHex(0x37b862);powerLed.material.emissiveIntensity=1;monitorScreen.material.color.setHex(0x314b65);panel.remove();d.querySelector('#bench-power').disabled=true;msg.textContent='Inicializando computador...';startBoot();};
+   function addPlug(pt,color,rotY=0){const p=B(external,.2,.09,.19,pt[0],pt[1],pt[2],color);p.rotation.y=rotY;B(external,.09,.04,.065,pt[0],pt[1],pt[2]+.085,0xc4c8cc);return p;}
+   function drawCable(points,color,rad=.04){const mesh=tube(external,points,color,rad);const a=points[0], b=points[points.length-1];addPlug(a,0x2f343a);addPlug(b,0x2f343a,Math.PI);return mesh;}
+   function makePortLabel(mesh){const el=document.createElement('div');el.innerHTML='<b>'+mesh.userData.label+'</b><br><span style="font-size:11px;opacity:.9">'+mesh.userData.sub+'</span>';el.style.cssText='position:absolute;transform:translate(-50%,-50%);padding:4px 8px;background:#102849dd;color:#fff;border:1px solid #ffd56b;border-radius:6px;font:12px Arial;text-align:center;pointer-events:none;white-space:nowrap;box-shadow:0 4px 12px #0006';host.append(el);return {el,obj:mesh};}
+   periphLabels=portTargets.map(makePortLabel);
+   const panel=document.createElement('div');panel.style.cssText='position:absolute;top:10px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;pointer-events:none';host.append(panel); periphPanel=panel;
+   let chosen=0;
+   const status=document.createElement('div');status.style.cssText='width:100%;text-align:center;color:white;background:#102849dd;padding:8px;border-radius:6px';panel.append(status);
+   const guide=document.createElement('div');guide.style.cssText='width:100%;text-align:center;color:#dce7f2;background:#0a1828cc;padding:6px;border-radius:6px;font-size:13px';guide.textContent='Clique diretamente no periférico brilhando. O gabinete aproxima a traseira e destaca a porta correta em amarelo.';panel.append(guide);
+   const overviewBtn=document.createElement('button');overviewBtn.textContent='Visão geral';overviewBtn.style.cssText='pointer-events:auto;padding:9px 12px;background:#e4edf5;color:#102849;border:0;border-radius:6px;font-weight:bold';panel.append(overviewBtn);
+   const chipWrap=document.createElement('div');chipWrap.style.cssText='width:100%;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;';panel.append(chipWrap);
+   const chips=peripherals.map(([name])=>{const c=document.createElement('div');c.textContent=name;c.style.cssText='padding:8px 10px;border-radius:6px;background:#27445f;color:white;font-weight:bold;opacity:.8';chipWrap.append(c);return c;});
+   function focusOverview(){camTargetPos=overviewPos.clone();camTargetLook=overviewLook.clone();}
+   function focusPort(mesh){const wp=new T.Vector3();mesh.getWorldPosition(wp);camTargetPos=new T.Vector3(wp.x+.22,wp.y+.18,wp.z-2.55);camTargetLook=wp.clone();}
+   function nextUnconnected(){for(let i=0;i<peripherals.length;i++)if(!connected.has(i))return i;return null;}
+   function refreshTargets(){
+      portTargets.forEach(m=>{const id=m.userData.accept, active=id===chosen && !connected.has(id), connectedNow=connected.has(id); m.visible=true; m.scale.setScalar(active?1.35:1); m.userData.hitMesh.scale.setScalar(active?1.35:1); if(connectedNow){m.material.color.setHex(0x39ed75);m.material.opacity=.96;} else if(active){m.material.color.setHex(0xffec6e);m.material.opacity=.98;} else {m.material.color.setHex(0xb9912b);m.material.opacity=.28;}});
+      periphLabels.forEach(({el,obj})=>{const id=obj.userData.accept; const active=id===chosen&&!connected.has(id); el.style.opacity=connected.has(id)?'1':(active?'1':'0.24'); el.style.borderColor=connected.has(id)?'#86f0aa':(active?'#fff3a0':'#8e7544');});
+      periphItems.forEach(item=>{item.active=!connected.has(item.id)&&item.id===chosen; item.done=connected.has(item.id); chips[item.id].style.background=item.done?'#8de3ac':item.active?'#f7941d':'#27445f'; chips[item.id].style.color=item.done||item.active?'#102849':'white'; chips[item.id].style.opacity=item.done||item.active?'1':'.75'; chips[item.id].textContent=(item.done?'✓ ':'')+item.name;});
+      if(connected.size===4){status.textContent='Todos os periféricos foram conectados. Pressione Ligar PC.';} else {status.textContent='Selecione o periférico brilhando e conecte-o na porta amarela correta.';}
+   }
+   function choosePeripheral(i,play=true){if(i===null||connected.has(i))return; chosen=i; if(play)sfxClick(); focusPort(portByPiece[i]); refreshTargets(); status.textContent='Conecte '+peripherals[i][0]+': clique na porta amarela correspondente na traseira do gabinete.';}
+   overviewBtn.onclick=()=>{sfxClick();focusOverview();status.textContent='Visão geral da bancada. Clique no periférico brilhando para aproximar a traseira do gabinete.';};
+   refreshTargets(); choosePeripheral(0,false);
+   external.userData.onPointerDown=(e)=>{
+      setRay(e);
+      const compHits=ray.intersectObjects(componentMeshes,true);
+      if(compHits.length){let obj=compHits[0].object; while(obj.parent&&obj.userData.component===undefined)obj=obj.parent; const id=obj.userData.component; if(id!==undefined&&!connected.has(id)){choosePeripheral(id,true); return;}}
+      const hits=ray.intersectObjects(portHitboxes,true); if(!hits.length){if(chosen!==null&&connected.size<4){sfxError();status.textContent='Clique na porta amarela correta na traseira do gabinete.';}return;}
+      let obj=hits[0].object; while(obj.parent&&obj.userData.accept===undefined)obj=obj.parent; if(obj.userData.accept===undefined)return; if(chosen===null){sfxError();status.textContent='Clique primeiro no periférico que deseja conectar.';return;}
+      const i=chosen; if(obj.userData.accept!==i){sfxError(); obj.userData.visibleMesh.material.color.setHex(0xff6565); status.textContent='Conector incorreto. Tente novamente no alvo amarelo certo.'; setTimeout(refreshTargets,450); return;}
+      connected.add(i); drawCable(wirePaths[i],i===0?0x27323d:i===3?0x375267:0x20262c,i===0?0.05:0.042); sfxSuccess(); counter.textContent='8/8 · '+connected.size+'/4 periféricos'; d.querySelector('#bench-power').disabled=connected.size!==4; const next=nextUnconnected(); if(next===null){chosen=null; focusOverview(); refreshTargets();} else choosePeripheral(next,false);
+   };
+   counter.textContent='8/8 · 0/4 periféricos'; msg.textContent='Montagem interna concluída! Clique no periférico destacado e conecte-o na traseira do gabinete.'; for(const id of ['bench-inspect','bench-rotate','bench-back'])d.querySelector('#'+id).hidden=true; d.querySelector('#bench-power').disabled=true; d.querySelector('#bench-finish').disabled=true;
+   d.querySelector('#bench-power').onclick=()=>{if(phase!=='peripherals'||connected.size!==4)return;phase='boot';powered=true;sfxPower();powerLed.material.color.setHex(0x6aff98);powerLed.material.emissive.setHex(0x37b862);powerLed.material.emissiveIntensity=1;monitorScreen.material.color.setHex(0x314b65); if(periphPanel){periphPanel.remove(); periphPanel=null;} periphLabels.forEach(v=>v.el&&v.el.remove()); periphLabels=[]; periphCompLabels.forEach(v=>v.el&&v.el.remove()); periphCompLabels=[]; periphItems=[]; d.querySelector('#bench-power').disabled=true; msg.textContent='Inicializando computador...'; startBoot();};
  }
  function startBoot(){
    const screen=document.createElement('div');screen.style.cssText='position:absolute;inset:0;background:#080f18;color:#bceacb;padding:clamp(15px,4vw,48px);font:clamp(12px,1.7vw,19px) monospace;overflow:auto;z-index:5;box-sizing:border-box';host.append(screen);
@@ -396,7 +430,7 @@ function openWorkbench(d){
  function showDesktop(screen){phase='desktop';screen.style.cssText='position:absolute;inset:0;z-index:5;background:linear-gradient(140deg,#102849,#146bab 55%,#20a6b5);font:15px Arial;color:white;overflow:hidden';screen.innerHTML=`<div style="position:absolute;top:18px;left:18px;display:grid;gap:15px">${[['▣','Este computador'],['▰','Arquivos'],['⚙','Configurações'],['✓','Diagnóstico']].map(([icon,name])=>`<button data-app="${name}" style="width:100px;padding:8px;background:#ffffff15;color:white;border:1px solid #ffffff40;border-radius:8px;cursor:pointer"><span style="display:block;font-size:32px">${icon}</span>${name}</button>`).join('')}</div><div id="desktop-window" hidden style="position:absolute;left:26%;right:7%;top:12%;bottom:15%;background:#f5f7fa;color:#142333;border-radius:9px;box-shadow:0 8px 30px #0006;overflow:auto"></div><div style="position:absolute;bottom:0;left:0;right:0;padding:10px;background:#102849ed;display:flex;align-items:center;gap:12px"><button data-app="Iniciar" style="padding:8px;border:0;background:#f7941d;border-radius:5px;font-weight:bold">▦ Iniciar</button><span>Senac OS · Ambiente de treinamento</span><span style="margin-left:auto">${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span></div>`;
    const win=screen.querySelector('#desktop-window');const content={'Este computador':'<p>Unidade local (C:) — SSD SATA</p><p>Processador e memória RAM detectados.</p>','Arquivos':'<p>📁 Documentos</p><p>📁 Downloads</p><p>📁 Imagens</p>','Configurações':'<p>Sistema: Senac OS (simulado)</p><p>Monitor, teclado, mouse e áudio conectados.</p>','Diagnóstico':'<p>✓ 8 etapas de montagem concluídas.</p><p>✓ 4 periféricos conectados.</p><p>✓ POST simulado concluído sem erros.</p>','Iniciar':'<p>Bem-vindo ao computador montado por você.</p><p>Explore os ícones da área de trabalho ou conclua a atividade.</p>'};screen.querySelectorAll('[data-app]').forEach(b=>b.onclick=()=>{sfxClick();win.hidden=false;win.innerHTML='<div style="background:#102849;color:white;padding:12px;display:flex;justify-content:space-between;align-items:center"><b>'+b.dataset.app+'</b><button id="desktop-close" style="cursor:pointer">✕</button></div><div style="padding:18px">'+content[b.dataset.app]+'</div>';win.querySelector('#desktop-close').onclick=()=>win.hidden=true;});msg.textContent='Computador inicializado! Explore a área de trabalho e conclua a atividade.';d.querySelector('#bench-finish').disabled=false;sfxSuccess();
  }
- let raf;function draw(){const w=host.clientWidth,h=host.clientHeight;if(w&&h){if(r.domElement.width!==Math.round(w*r.getPixelRatio())||r.domElement.height!==Math.round(h*r.getPixelRatio())){r.setSize(w,h,false);cam.aspect=w/h;cam.fov=T.MathUtils.radToDeg(2*Math.atan(Math.max(Math.tan(T.MathUtils.degToRad(43/2)),8.6/(15.6*(w/h)))));cam.updateProjectionMatrix();}r.render(sc,cam);labels.forEach((el,i)=>{el.hidden=phase!=="assembly"||inspecting||done.has(i)||(drag&&drag.i===i);if(!el.hidden){const v=new T.Vector3(...specs[i][1]);v.z+=.7;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});}raf=requestAnimationFrame(draw);}text();draw();
+ let raf;function draw(){const w=host.clientWidth,h=host.clientHeight;if(w&&h){if(r.domElement.width!==Math.round(w*r.getPixelRatio())||r.domElement.height!==Math.round(h*r.getPixelRatio())){r.setSize(w,h,false);cam.aspect=w/h;cam.fov=T.MathUtils.radToDeg(2*Math.atan(Math.max(Math.tan(T.MathUtils.degToRad(43/2)),8.6/(15.6*(w/h)))));cam.updateProjectionMatrix();}if(phase==='peripherals'&&camTargetPos&&camTargetLook){cam.position.lerp(camTargetPos,.12);if(!cam.userData.lookCurrent)cam.userData.lookCurrent=camTargetLook.clone();cam.userData.lookCurrent.lerp(camTargetLook,.12);cam.lookAt(cam.userData.lookCurrent);}const pulse=performance.now()*0.004;periphItems.forEach(item=>{item.meshes.forEach(m=>{if(m.material&&m.material.emissive){if(item.active){m.material.emissive.setHex(0x7a5b11);m.material.emissiveIntensity=.45+Math.sin(pulse*2+item.id)*.18;}else if(item.done){m.material.emissive.setHex(0x174e2f);m.material.emissiveIntensity=.22;}else{m.material.emissive.setHex(0x000000);m.material.emissiveIntensity=0;}}});});r.render(sc,cam);labels.forEach((el,i)=>{el.hidden=phase!=="assembly"||inspecting||done.has(i)||(drag&&drag.i===i);if(!el.hidden){const v=new T.Vector3(...specs[i][1]);v.z+=.7;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});periphLabels.forEach(({el,obj})=>{el.hidden=phase!=='peripherals';if(!el.hidden){const v=obj.getWorldPosition(new T.Vector3());v.y+=.34;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});periphCompLabels.forEach(({el,obj,dy})=>{el.hidden=phase!=='peripherals';if(!el.hidden){const v=obj.getWorldPosition(new T.Vector3());v.y+=dy;v.project(cam);el.style.left=(v.x*.5+.5)*w+'px';el.style.top=(-v.y*.5+.5)*h+'px';}});}raf=requestAnimationFrame(draw);}text();draw();
  d.querySelector('#bench-finish').onclick=()=>{if(phase!=='desktop')return;sfxSuccess();cancelAnimationFrame(raf);free(world);if(external)free(external);if(preview)free(preview);r.dispose();state.assemblyDone=true;closeDialog(d);showMission('Dia 2 concluído! Computador montado e testado.');openTiMenu();};
 }
 
