@@ -403,12 +403,12 @@ window.criarCenarioTech = function(T, scene, box, walls, sign){
       const insideLobby = Math.abs(p.x) < 8.4 && Math.abs(p.z) < 7.2;
       roof.visible = !running || !insideLobby;
       corridorRoofs.forEach(o => o.visible = !running || Math.abs(p.x)>3.4 || p.z<6 || p.z>26);
-      const gateGoal=!!(flags&&flags.greeted);if(running&&gateGoal!==!!gate.soundGoal){gate.soundGoal=gateGoal;flags?.onDoor?.();}
+      const gateGoal=!!(flags&&flags.greeted);if(running&&gateGoal!==!!gate.soundGoal){gate.soundGoal=gateGoal;flags?.onDoor?.(0,21.2);}
       gate.open = T.MathUtils.lerp(gate.open, flags && flags.greeted ? 1 : 0, 1-Math.exp(-dt*7));
       gate.leaves.forEach((g,i)=> g.position.x = (i?1:-1) * (.55 + gate.open * .82));
       for(const d of doorFrames){
         const near = Math.abs(p.x-(d.x||0)) < 2.7 && Math.abs(p.z-d.z) < 2.6;
-        if(running&&near!==!!d.soundGoal){d.soundGoal=near;flags?.onDoor?.();}
+        if(running&&near!==!!d.soundGoal){d.soundGoal=near;flags?.onDoor?.(d.x||0,d.z);}
         d.open = T.MathUtils.lerp(d.open, near ? 1 : 0, 1-Math.exp(-dt*8));
         d.leaves.forEach((g,i)=> g.position.x = (d.x||0)+(i?1:-1) * (d.baseX + d.open*d.openDist));
       }

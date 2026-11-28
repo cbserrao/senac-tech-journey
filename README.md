@@ -31,3 +31,7 @@ v2.6.1: menu inicial, salvamento local por atividade concluída, detalhes 3D nos
 
 ## v2.7.0
 Áudio procedural original via Web Audio, voz pt-BR sintetizada em WAV (eSpeak), música ambiente, efeitos e controles de volume persistentes. O áudio inicia após interação.
+
+
+## v2.8.0
+Vozes sintetizadas PT-BR em MP3, narração por etapa, ambiente procedural por região, atenuação por distância e panorama estéreo de portas e ambientes, ventoinha contínua durante teste/boot. Controles de ambiente e voz independentes. Sons não são gravações reais.
