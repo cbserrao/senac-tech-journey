@@ -53,3 +53,6 @@ Voz a 82% por padrão, ajuste de 65–100%, preservação de tom pelo navegador,
 
 ## v2.8.4
 Narração natural via SpeechSynthesis em português brasileiro, quando uma voz de qualidade está disponível. Seleção de voz e botão de teste em Áudio; fallback para os arquivos existentes. Não inclui voz Alexa nem serviço neural próprio. Vozes disponíveis dependem do sistema/navegador.
+
+## v2.9.0
+Modo Libras / legendas com painel lateral, preferência local, integração oficial VLibras sob demanda e texto das instruções independente do volume. Abra o ícone oficial do VLibras e clique no texto para traduzir; não há tradução automática por chamada de API. A tradução depende da conexão e do serviço externo. Revisão por profissional de Libras recomendada.

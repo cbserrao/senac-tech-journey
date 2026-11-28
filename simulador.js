@@ -1,6 +1,6 @@
 (function(){'use strict';
 if (!window.THREE) { document.body.textContent='Não foi possível carregar Three.js.'; return; }
-const APP_VERSION='v2.8.4';
+const APP_VERSION='v2.9.0';
 const T=window.THREE, root=document.createElement('div');
 root.id='tech-journey'; root.dataset.version=APP_VERSION; root.style.cssText='position:fixed;inset:0;overflow:hidden;background:#122943;color:white;font:16px Arial,sans-serif;touch-action:none';
 document.body.append(root);
@@ -131,7 +131,7 @@ moveUI.wrap.onpointermove=e=>{ if(moveJoy.active) setOneJoy(moveJoy,moveUI.knob,
 moveUI.wrap.onpointerup=moveUI.wrap.onpointercancel=moveUI.wrap.onlostpointercapture=()=>resetOneJoy(moveJoy,moveUI.knob);
 function resetJoys(){ resetOneJoy(moveJoy,moveUI.knob); }
 
-function showMission(text){ root.querySelector('#tj-mission').textContent=text; }
+function showMission(text){ root.querySelector('#tj-mission').textContent=text; window.STJAccess?.update(text); }
 function createDialog(title, html){ state.dialog=true; keys.clear(); resetJoys(); const d=document.createElement('div'); d.style.cssText='position:absolute;left:10%;right:10%;bottom:8%;background:#102849;border:3px solid #f7941d;border-radius:10px;padding:20px;max-height:70%;overflow:auto;z-index:10'; d.innerHTML='<b style="color:#f7941d">'+title+'</b>'+html; root.append(d); return d; }
 function closeDialog(d){ if(d&&d.remove) d.remove(); state.dialog=false; audio.stopSpeech(); audio.fan(false); saveProgress(); }
 function near(pos,dist){ return Math.hypot(player.g.position.x-pos.x, player.g.position.z-pos.z) < dist; }
@@ -232,7 +232,7 @@ function startDiagnosis(){
  const monitor=group('MONITOR',-4.5,.1,-.8);B(monitor,2.42,1.62,.22,0,1.4,0,0x222b33);const screen=B(monitor,2.08,1.27,.03,0,1.4,.12,0x111820);B(monitor,.22,.02,1.72,0,2.16,.03,0x394550);B(monitor,.25,.65,.3,0,.45,0,0x333e48);B(monitor,1,.12,.6,0,.1,0,0x333e48);B(monitor,.55,.02,.03,0,.66,.18,0x4d5b67);B(monitor,.58,.04,.04,0,.69,.13,0x22384c);B(monitor,.065,.035,.025,.93,.69,.14,0x65bd89);
  const labels=[];for(const [id,g] of Object.entries(objects)){if(id.startsWith('SCREW'))continue;const el=document.createElement('div');el.textContent=({LID:'Tampa lateral',TOOL:'Chave Phillips',MONITOR:'Monitor',ATX:'ATX 24 pinos',RAM:'RAM',CPU_FAN:'Cooler / CPU_FAN',SATA:'SATA',HDMI:'HDMI'})[id];el.style.cssText='position:absolute;pointer-events:none;transform:translate(-50%,-50%);background:#102849dd;color:white;padding:3px 6px;border-radius:4px;font:12px Arial';host.append(el);labels.push({id,g,el});}
  const initial={};for(const [id,g] of Object.entries(objects))initial[id]=g.position.clone();let index=0,off=false,opened=false,closing=false,selectedTool=false,turns=[0,0,0,0],fixed=false,passed=false,inspected=null,errors=0,results=[],caseErrors=0,started=performance.now(),caseStart=started,raf;
- const note=t=>q('dn').textContent=t;const ray=new T.Raycaster();function show(){q('dc').textContent=` · Chamado ${index+1}/5 · Erros: ${errors}`;q('sym').textContent=cases[index][0]+' — '+cases[index][1];q('dp').disabled=off||passed;q('dt').disabled=!off||!fixed||opened||closing||passed;q('dx').disabled=!passed;}
+ const note=t=>{q('dn').textContent=t;window.STJAccess?.update(t);};const ray=new T.Raycaster();function show(){q('dc').textContent=` · Chamado ${index+1}/5 · Erros: ${errors}`;q('sym').textContent=cases[index][0]+' — '+cases[index][1];q('dp').disabled=off||passed;q('dt').disabled=!off||!fixed||opened||closing||passed;q('dx').disabled=!passed;}
  function reset(){audio.fan(false); audio.say('client-'+index);setZoom(1);off=opened=closing=selectedTool=fixed=passed=false;inspected=null;turns=[0,0,0,0];caseErrors=0;caseStart=performance.now();for(const [id,g] of Object.entries(objects)){g.position.copy(initial[id]);g.rotation.set(0,0,0);g.visible=true;}const g=objects[cases[index][2]];g.position.y+=.25;if(cases[index][2]==='HDMI')g.position.z-=.35;screen.material.color.setHex(0x111820);note('Inspecione o equipamento. Desconecte a energia antes de usar ferramentas.');show();}
  function wrong(t){errors++;caseErrors++;sfxError();note(t);show();}
  function interact(id){
@@ -260,7 +260,7 @@ function openWorkbench(d){
  d.style.cssText='position:absolute;inset:0;background:#142333;z-index:20;display:flex;flex-direction:column;color:white;overflow:hidden;touch-action:none';
  d.innerHTML=`<div style="padding:10px 16px;background:#102849;border-bottom:2px solid #f7941d;display:flex;justify-content:space-between;align-items:center"><b style="color:#ffb04f">DIA 2 · BANCADA DE MANUTENÇÃO</b><span id="bench-count">0/8</span></div><div id="bench-stage" style="flex:1;min-height:0;position:relative"></div><div style="padding:9px 14px;background:#102849;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span id="bench-message" style="flex:1;min-width:200px"></span><button id="bench-inspect">Inspecionar peça</button><button id="bench-rotate">Girar peça</button><button id="bench-back" hidden>Voltar à bancada</button><button id="bench-power" disabled>Ligar PC</button><button id="bench-finish" disabled>Concluir</button></div>`;
  d.querySelectorAll('button').forEach(b=>b.style.cssText='padding:10px;border:0;border-radius:5px;background:#f0a13b;color:#142333;font-weight:bold;cursor:pointer');
- const host=d.querySelector('#bench-stage'), msg=d.querySelector('#bench-message'), counter=d.querySelector('#bench-count');
+ const host=d.querySelector('#bench-stage'), msg=d.querySelector('#bench-message'), counter=d.querySelector('#bench-count'); const accessObserver=new MutationObserver(()=>{if(!d.isConnected){accessObserver.disconnect();return;}window.STJAccess?.update(msg.textContent);});accessObserver.observe(msg,{childList:true,characterData:true,subtree:true});
  const sc=new T.Scene();sc.background=new T.Color(0x253746);const cam=new T.PerspectiveCamera(43,1,.1,100);cam.position.set(0,14,7);cam.lookAt(0,0,0);
  const buildVariants=[
   {name:'Kit Escritório', pcb:0x275e45, accent:0x6f7c85, ram:0x275e45, ssdHead:'#163450', ssdSub:'256 GB · SATA', psuLabel:'500W Office', caseAccent:0x7d848a},
@@ -672,12 +672,12 @@ function startLesson(){
 }
 function renderComponent(d){
  disposePartViewer();
- const c=components[lessonIndex]; audio.say('lesson-'+lessonIndex);
+ const c=components[lessonIndex]; audio.say('lesson-'+lessonIndex); window.STJAccess?.update(c[0]+'. '+c[1]+' '+c[2]);
  d.innerHTML=`<b style="color:#f7941d">DIA 1 · COMPONENTE ${lessonIndex+1}/${components.length}</b><div class="part-view" style="height:clamp(180px,40vh,360px);width:100%"></div><div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin:5px 0">${[["left","←"],["right","→"],["up","↑"],["down","↓"],["plus","+"],["minus","−"],["reset","Restaurar"]].map(([k,t])=>`<button data-view="${k}" type="button" style="padding:8px">${t}</button>`).join("")}</div><small>Arraste a peça para girar em 3D. Use + e − para aproximar.</small><h2 style="margin:6px 0">${c[0]}</h2><p>${c[1]}</p><b>${c[2]}</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${c[3].map((a,i)=>`<button data-answer="${i}" style="padding:10px;border-radius:6px">${a}</button>`).join('')}</div><p class="feedback" aria-live="polite"></p>`;
  mountPartViewer(d.querySelector(".part-view"),lessonIndex); const replay=document.createElement('button');replay.textContent='🔊 Ouvir explicação';replay.onclick=()=>audio.say('lesson-'+lessonIndex,true);d.querySelector('.part-view').after(replay);
  d.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{
- const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){sfxError();feedback.textContent='Tente novamente. Leia a função da peça.';return;}
- sfxSuccess();d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{sfxClick();lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;saveProgress();showMission('Dia 1 concluído! O Dia 2 — montagem do computador — foi liberado.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. O <b>Dia 2 — montagem do computador</b> foi liberado.</p><button style="padding:12px">Voltar ao painel de atividades</button>';d.querySelector('button').onclick=()=>{sfxClick();closeDialog(d);openTiMenu();};};
+ const feedback=d.querySelector('.feedback');if(Number(b.dataset.answer)!==c[4]){sfxError();feedback.textContent='Tente novamente. Leia a função da peça.';window.STJAccess?.update(feedback.textContent);return;}
+ sfxSuccess();d.querySelectorAll('[data-answer]').forEach(a=>a.disabled=true);feedback.textContent='Resposta correta!';window.STJAccess?.update(feedback.textContent);const next=document.createElement('button');next.textContent=lessonIndex===components.length-1?'Concluir aula':'Próximo componente';next.style.cssText='padding:12px;background:#f7941d;border:0;border-radius:6px';d.append(next);next.onclick=()=>{sfxClick();lessonIndex++;if(lessonIndex<components.length){renderComponent(d);return;}disposePartViewer();state.lessonDone=true;saveProgress();showMission('Dia 1 concluído! O Dia 2 — montagem do computador — foi liberado.');d.innerHTML='<b style="color:#f7941d">DIA 1 CONCLUÍDO</b><p>Parabéns! Você identificou os sete componentes. O <b>Dia 2 — montagem do computador</b> foi liberado.</p><button style="padding:12px">Voltar ao painel de atividades</button>';d.querySelector('button').onclick=()=>{sfxClick();closeDialog(d);openTiMenu();};};
  });
 }
 
