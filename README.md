@@ -4,3 +4,6 @@ Bancada lowpoly procedural: chave Phillips, seis parafusos da placa-mãe, tampa 
 
 ## v2.1.0
 Travas CPU e DIMM, pasta térmica, fixação do cooler e conexões ATX/CPU/SATA guiadas. Modelos procedurais; operações simplificadas por clique.
+
+## v2.2.0
+Pendrive 3D, POST simulado, BIOS DEL/F2, prioridade USB, F10 e tela inicial do instalador. Instalação completa prevista para v2.3.
