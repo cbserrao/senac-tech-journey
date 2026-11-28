@@ -16,3 +16,6 @@ Instaladores Windows/Ubuntu em seis etapas, particionamento virtual com tamanho 
 
 ## v2.5.0
 Dia 3 com bancada 3D, chave Phillips, tampa, quatro parafusos, cinco falhas, teste e avaliação por erros e tempo. Modelos procedurais e interações simplificadas; progresso em sessão.
+
+## v2.5.1
+Dia 3: tampa deve ser recolocada antes do aperto dos parafusos. Teste bloqueado até a fixação completa. Zoom de 100% a 240% por roda do mouse e botões, com restauração da visão geral.
