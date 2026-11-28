@@ -19,3 +19,6 @@ Dia 3 com bancada 3D, chave Phillips, tampa, quatro parafusos, cinco falhas, tes
 
 ## v2.5.1
 Dia 3: tampa deve ser recolocada antes do aperto dos parafusos. Teste bloqueado até a fixação completa. Zoom de 100% a 240% por roda do mouse e botões, com restauração da visão geral.
+
+
+Atualização visual v2.5.2: peças procedurais com mais detalhes visuais (chips, conectores, rótulos, grelhas, cabos e acabamentos) sem depender de modelos Blender.
