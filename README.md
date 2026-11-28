@@ -25,3 +25,6 @@ Atualização visual v2.5.2: peças procedurais com mais detalhes visuais (chips
 
 
 Atualização v2.6.0: corrigido o carregamento do Dia 3 (helper 3D de cabos), badge visual de versão na tela, placa-mãe com mais detalhes, interior do gabinete melhorado e kits/variações visuais de peças na montagem.
+
+
+v2.6.1: menu inicial, salvamento local por atividade concluída, detalhes 3D nos três dias, periféricos e correção da ordem de inicialização das ventoinhas. Continuar retoma a sala de TI, não uma montagem em andamento.
