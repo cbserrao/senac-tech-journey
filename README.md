@@ -46,3 +46,10 @@ Vozes sintetizadas PT-BR em MP3, narração por etapa, ambiente procedural por r
 - Corrigido o travamento ao concluir os parafusos da fixação e da tampa no Dia 2.
 - Ajustado o avanço automático para a próxima etapa.
 - Renomeada internamente a porta de áudio para evitar conflito com o sistema de som do jogo.
+
+
+## v2.8.3
+Voz a 82% por padrão, ajuste de 65–100%, preservação de tom pelo navegador, início após 220 ms, cancelamento de falas antigas e redução automática de música/ambiente durante narração. Corrigida chamada antecipada da próxima peça na montagem.
+
+## v2.8.4
+Narração natural via SpeechSynthesis em português brasileiro, quando uma voz de qualidade está disponível. Seleção de voz e botão de teste em Áudio; fallback para os arquivos existentes. Não inclui voz Alexa nem serviço neural próprio. Vozes disponíveis dependem do sistema/navegador.
