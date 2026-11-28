@@ -1,5 +1,3 @@
-# Senac Tech Journey v1.5.2
+# Senac Tech Journey 2.0.0
 
-Dia 2: após as oito etapas internas, conecte monitor (HDMI), teclado e mouse (USB) e caixas de som (P2). Ligue o PC e acompanhe o POST simulado. Explore a área de trabalho Senac OS e conclua a atividade.
-
-A inicialização e o sistema operacional são simulações educacionais, não testes reais de hardware.
+Bancada lowpoly procedural: chave Phillips, seis parafusos da placa-mãe, tampa lateral e quatro parafusos. Clique na chave e depois nos pontos amarelos quatro vezes cada. Conexões externas e POST anteriores preservados. BIOS e instalador ficam para versões futuras.
