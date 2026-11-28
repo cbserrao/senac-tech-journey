@@ -28,3 +28,6 @@ Atualização v2.6.0: corrigido o carregamento do Dia 3 (helper 3D de cabos), ba
 
 
 v2.6.1: menu inicial, salvamento local por atividade concluída, detalhes 3D nos três dias, periféricos e correção da ordem de inicialização das ventoinhas. Continuar retoma a sala de TI, não uma montagem em andamento.
+
+## v2.7.0
+Áudio procedural original via Web Audio, voz pt-BR sintetizada em WAV (eSpeak), música ambiente, efeitos e controles de volume persistentes. O áudio inicia após interação.
