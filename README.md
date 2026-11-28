@@ -35,3 +35,8 @@ v2.6.1: menu inicial, salvamento local por atividade concluída, detalhes 3D nos
 
 ## v2.8.0
 Vozes sintetizadas PT-BR em MP3, narração por etapa, ambiente procedural por região, atenuação por distância e panorama estéreo de portas e ambientes, ventoinha contínua durante teste/boot. Controles de ambiente e voz independentes. Sons não são gravações reais.
+
+
+## v2.8.1
+- Corrigida a progressão da fixação de parafusos no Dia 2 com avanço automático após concluir os pontos amarelos.
+- Badge de versão movido para o topo central para não cobrir os botões e mensagens do rodapé.

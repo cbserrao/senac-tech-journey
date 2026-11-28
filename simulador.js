@@ -1,13 +1,13 @@
 (function(){'use strict';
 if (!window.THREE) { document.body.textContent='Não foi possível carregar Three.js.'; return; }
-const APP_VERSION='v2.8.0';
+const APP_VERSION='v2.8.1';
 const T=window.THREE, root=document.createElement('div');
 root.id='tech-journey'; root.dataset.version=APP_VERSION; root.style.cssText='position:fixed;inset:0;overflow:hidden;background:#122943;color:white;font:16px Arial,sans-serif;touch-action:none';
 document.body.append(root);
 const scene=new T.Scene(); scene.background=new T.Color(0x9ec9ed); scene.fog=new T.Fog(0x9ec9ed,45,95);
 const camera=new T.PerspectiveCamera(48,1,.1,140), renderer=new T.WebGLRenderer({antialias:false});
 renderer.domElement.style.cssText='width:100%;height:100%;image-rendering:pixelated;display:block'; root.append(renderer.domElement);
-const versionBadge=document.createElement('div'); versionBadge.id='tj-version'; versionBadge.textContent='Versão '+APP_VERSION; versionBadge.style.cssText='position:absolute;right:12px;bottom:12px;z-index:35;background:#102849e8;border:1px solid #f7941d;color:#fff;padding:6px 10px;border-radius:999px;font:12px Arial,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.28);pointer-events:none'; root.append(versionBadge);
+const versionBadge=document.createElement('div'); versionBadge.id='tj-version'; versionBadge.textContent='Versão '+APP_VERSION; versionBadge.style.cssText='position:absolute;left:50%;top:66px;transform:translateX(-50%);z-index:35;background:#102849e8;border:1px solid #f7941d;color:#fff;padding:5px 10px;border-radius:999px;font:12px Arial,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.28);pointer-events:none'; root.append(versionBadge);
 // Sombras e reflexos: mapa de sombra localizado e ambiente refletido procedural.
 const compactGraphics=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)|| (navigator.maxTouchPoints>1 && innerWidth<1100);
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
@@ -409,7 +409,7 @@ function openWorkbench(d){
  function beginMechanical(kind){
    phase='mechanical';selected=null;drag=null;targets.forEach(t=>t.visible=false);
    const isBoard=kind==='board';audio.say(isBoard?'screws-board':'close-case');const positions=isBoard?[[-1.85,.47,-1.85],[.69,.47,-1.85],[-1.85,.47,-.35],[.69,.47,-.35],[-1.85,.47,1.15],[.69,.47,1.15]]:[[-2,1.65,-2.35],[2,1.65,-2.35],[-2,1.65,2.35],[2,1.65,2.35]];
-   mechanical={kind,positions,screws:[],rings:[],counts:positions.map(()=>0),picked:false,current:-1,angle:0};
+   mechanical={kind,positions,screws:[],rings:[],counts:positions.map(()=>0),picked:false,current:-1,angle:0,requiredTurns:1};
    if(!isBoard){lid.position.set(0,.25,-3.7);msg.textContent='Clique na tampa lateral para fechar o gabinete.';}else msg.textContent='Placa-mãe posicionada. Clique na chave Phillips para iniciar a fixação.';
    mechanical.panel=document.createElement('div');mechanical.panel.style.cssText='position:absolute;top:12px;left:12px;right:12px;text-align:center;background:#102849e8;border:1px solid #f7941d;padding:10px;border-radius:8px;pointer-events:none';host.append(mechanical.panel);
    mechanical.panel.textContent=isBoard?'Fixação da placa-mãe · 0/6':'Fechamento do gabinete';
@@ -419,11 +419,11 @@ function openWorkbench(d){
  function mechanicalClick(e){const m=mechanical;if(!m)return;setRay(e);sc.updateMatrixWorld(true);
    if(m.kind==='lid'&&!m.screws.length){if(!ray.intersectObject(lid,true).length)return;lid.position.set(0,1.67,0);lid.children[0].scale.z=4.2;lid.children.slice(1).forEach(o=>o.position.z=1.7);createScrews();msg.textContent='Tampa posicionada. Clique na chave Phillips.';audio.play('lid');return;}
    if(!m.picked){if(!ray.intersectObject(toolGroup,true).length)return;m.picked=true;sfxClick();msg.textContent='Chave selecionada. Clique em um parafuso amarelo e continue clicando para girar.';return;}
-   const hits=ray.intersectObjects(m.rings.filter((_,i)=>m.counts[i]<4),false);let i=hits.length?m.rings.indexOf(hits[0].object):-1;
-   if(i<0){const v=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-m.positions[0][1]-.13),v)){i=m.positions.findIndex((p,j)=>m.counts[j]<4&&Math.hypot(v.x-p[0],v.z-p[2])<.24);}}
-   if(i<0)return;m.current=i;m.counts[i]++;m.angle+=Math.PI*.65;const [x,y,z]=m.positions[i];toolGroup.position.set(x,y+.3,z);driver.rotation.set(0,m.angle,0);driver.position.y=.14;m.screws[i].rotation.y+=Math.PI/2;m.screws[i].position.y=y+.08*(1-m.counts[i]/4);audio.play('screw');if(m.counts[i]===4){m.rings[i].material.color.setHex(0x39ed75);sfxSuccess();}
-   const n=m.counts.filter(v=>v===4).length;m.panel.textContent=`${m.kind==='board'?'Fixação da placa-mãe':'Fixação da tampa'} · ${n}/${m.counts.length} · Parafuso ${i+1}: ${m.counts[i]*25}%`;msg.textContent='Clique novamente no parafuso para apertar ou selecione outro ponto amarelo.';
-   if(n===m.counts.length){m.panel.remove();m.rings.forEach(o=>{world.remove(o);o.geometry.dispose();o.material.dispose();});const kind=m.kind;mechanical=null;toolGroup.position.set(-3.15,.25,-3.65);driver.rotation.set(0,0,Math.PI/2);if(kind==='board'){openSocket();}else showPeripherals();}
+   const hits=ray.intersectObjects(m.rings.filter((_,i)=>m.counts[i]<m.requiredTurns),false);let i=hits.length?m.rings.indexOf(hits[0].object):-1;
+   if(i<0){const v=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-m.positions[0][1]-.13),v)){i=m.positions.findIndex((p,j)=>m.counts[j]<m.requiredTurns&&Math.hypot(v.x-p[0],v.z-p[2])<.24);}}
+   if(i<0){if(m.counts.every(v=>v>=m.requiredTurns)){m.panel.remove();m.rings.forEach(o=>{world.remove(o);o.geometry.dispose();o.material.dispose();});const kind=m.kind;mechanical=null;toolGroup.position.set(-3.15,.25,-3.65);driver.rotation.set(0,0,Math.PI/2);if(kind==='board'){openSocket();}else showPeripherals();}return;}m.current=i;m.counts[i]=Math.min(m.requiredTurns,m.counts[i]+1);m.angle+=Math.PI*.65;const [x,y,z]=m.positions[i];toolGroup.position.set(x,y+.3,z);driver.rotation.set(0,m.angle,0);driver.position.y=.14;m.screws[i].rotation.y+=Math.PI/2;m.screws[i].position.y=y+.08*(1-m.counts[i]/m.requiredTurns);audio.play('screw');if(m.counts[i]===m.requiredTurns){m.rings[i].material.color.setHex(0x39ed75);sfxSuccess();}
+   const n=m.counts.filter(v=>v>=m.requiredTurns).length, pct=Math.round(m.counts[i]/m.requiredTurns*100);m.panel.textContent=`${m.kind==='board'?'Fixação da placa-mãe':'Fixação da tampa'} · ${n}/${m.counts.length} · Parafuso ${i+1}: ${pct}%`;msg.textContent=n===m.counts.length?'Fixação concluída. Abrindo a próxima etapa...':'Parafuso '+(i+1)+' fixado. Continue nos pontos amarelos restantes.';
+   if(n===m.counts.length){setTimeout(()=>{if(mechanical!==m)return;m.panel.remove();m.rings.forEach(o=>{world.remove(o);o.geometry.dispose();o.material.dispose();});const kind=m.kind;mechanical=null;toolGroup.position.set(-3.15,.25,-3.65);driver.rotation.set(0,0,Math.PI/2);if(kind==='board'){openSocket();}else showPeripherals();},220);}
  }
  // V2.1: operações avançadas obrigatórias entre os encaixes.
  let advanced=null;
