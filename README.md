@@ -7,3 +7,6 @@ Travas CPU e DIMM, pasta térmica, fixação do cooler e conexões ATX/CPU/SATA 
 
 ## v2.2.0
 Pendrive 3D, POST simulado, BIOS DEL/F2, prioridade USB, F10 e tela inicial do instalador. Instalação completa prevista para v2.3.
+
+## v2.3.0
+Escolha de ISO Windows 11 ou Ubuntu Linux, gravação USB virtual, particionamento GPT, formatação NTFS/ext4, instalação, retirada virtual do USB e área de trabalho simulada. Não acessa discos reais.
