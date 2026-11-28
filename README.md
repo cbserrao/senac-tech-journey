@@ -22,3 +22,6 @@ Dia 3: tampa deve ser recolocada antes do aperto dos parafusos. Teste bloqueado 
 
 
 Atualização visual v2.5.2: peças procedurais com mais detalhes visuais (chips, conectores, rótulos, grelhas, cabos e acabamentos) sem depender de modelos Blender.
+
+
+Atualização v2.6.0: corrigido o carregamento do Dia 3 (helper 3D de cabos), badge visual de versão na tela, placa-mãe com mais detalhes, interior do gabinete melhorado e kits/variações visuais de peças na montagem.
