@@ -40,3 +40,9 @@ Vozes sintetizadas PT-BR em MP3, narração por etapa, ambiente procedural por r
 ## v2.8.1
 - Corrigida a progressão da fixação de parafusos no Dia 2 com avanço automático após concluir os pontos amarelos.
 - Badge de versão movido para o topo central para não cobrir os botões e mensagens do rodapé.
+
+
+## v2.8.2
+- Corrigido o travamento ao concluir os parafusos da fixação e da tampa no Dia 2.
+- Ajustado o avanço automático para a próxima etapa.
+- Renomeada internamente a porta de áudio para evitar conflito com o sistema de som do jogo.

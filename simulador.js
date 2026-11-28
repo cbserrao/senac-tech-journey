@@ -1,6 +1,6 @@
 (function(){'use strict';
 if (!window.THREE) { document.body.textContent='Não foi possível carregar Three.js.'; return; }
-const APP_VERSION='v2.8.1';
+const APP_VERSION='v2.8.2';
 const T=window.THREE, root=document.createElement('div');
 root.id='tech-journey'; root.dataset.version=APP_VERSION; root.style.cssText='position:fixed;inset:0;overflow:hidden;background:#122943;color:white;font:16px Arial,sans-serif;touch-action:none';
 document.body.append(root);
@@ -423,7 +423,7 @@ function openWorkbench(d){
    if(i<0){const v=new T.Vector3();if(ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-m.positions[0][1]-.13),v)){i=m.positions.findIndex((p,j)=>m.counts[j]<m.requiredTurns&&Math.hypot(v.x-p[0],v.z-p[2])<.24);}}
    if(i<0){if(m.counts.every(v=>v>=m.requiredTurns)){m.panel.remove();m.rings.forEach(o=>{world.remove(o);o.geometry.dispose();o.material.dispose();});const kind=m.kind;mechanical=null;toolGroup.position.set(-3.15,.25,-3.65);driver.rotation.set(0,0,Math.PI/2);if(kind==='board'){openSocket();}else showPeripherals();}return;}m.current=i;m.counts[i]=Math.min(m.requiredTurns,m.counts[i]+1);m.angle+=Math.PI*.65;const [x,y,z]=m.positions[i];toolGroup.position.set(x,y+.3,z);driver.rotation.set(0,m.angle,0);driver.position.y=.14;m.screws[i].rotation.y+=Math.PI/2;m.screws[i].position.y=y+.08*(1-m.counts[i]/m.requiredTurns);audio.play('screw');if(m.counts[i]===m.requiredTurns){m.rings[i].material.color.setHex(0x39ed75);sfxSuccess();}
    const n=m.counts.filter(v=>v>=m.requiredTurns).length, pct=Math.round(m.counts[i]/m.requiredTurns*100);m.panel.textContent=`${m.kind==='board'?'Fixação da placa-mãe':'Fixação da tampa'} · ${n}/${m.counts.length} · Parafuso ${i+1}: ${pct}%`;msg.textContent=n===m.counts.length?'Fixação concluída. Abrindo a próxima etapa...':'Parafuso '+(i+1)+' fixado. Continue nos pontos amarelos restantes.';
-   if(n===m.counts.length){setTimeout(()=>{if(mechanical!==m)return;m.panel.remove();m.rings.forEach(o=>{world.remove(o);o.geometry.dispose();o.material.dispose();});const kind=m.kind;mechanical=null;toolGroup.position.set(-3.15,.25,-3.65);driver.rotation.set(0,0,Math.PI/2);if(kind==='board'){openSocket();}else showPeripherals();},220);}
+   if(n===m.counts.length){const kind=m.kind; msg.textContent='Fixação concluída. Abrindo a próxima etapa...'; m.panel.remove(); m.rings.forEach(o=>{world.remove(o);o.geometry.dispose();o.material.dispose();}); mechanical=null; toolGroup.position.set(-3.15,.25,-3.65); driver.rotation.set(0,0,Math.PI/2); setTimeout(()=>{ if(kind==='board'){openSocket();} else {showPeripherals();} },80);}
  }
  // V2.1: operações avançadas obrigatórias entre os encaixes.
  let advanced=null;
@@ -495,9 +495,9 @@ function openWorkbench(d){
    const hdmi=makePort(caseX-.14,caseY+.03,-2.13,.24,.1,0,'HDMI','Monitor');
    const usbKb=makePort(caseX-.28,caseY-.26,-2.13,.19,.09,1,'USB','Teclado');
    const usbMouse=makePort(caseX-.02,caseY-.26,-2.13,.19,.09,2,'USB','Mouse');
-   const audio=makePort(caseX-.14,caseY-.55,-2.13,.15,.15,3,'Áudio P2','Caixa de som');
+   const audioJack=makePort(caseX-.14,caseY-.55,-2.13,.15,.15,3,'Áudio P2','Caixa de som');
    const usbBoot=makePort(caseX-.42,caseY+.40,-2.13,.21,.10,4,'USB','Pendrive'); usbBoot.vis.visible=false;usbBoot.hit.visible=false;
-   const portTargets=[hdmi.vis,usbKb.vis,usbMouse.vis,audio.vis], portHitboxes=[hdmi.hit,usbKb.hit,usbMouse.hit,audio.hit];
+   const portTargets=[hdmi.vis,usbKb.vis,usbMouse.vis,audioJack.vis], portHitboxes=[hdmi.hit,usbKb.hit,usbMouse.hit,audioJack.hit];
    const portByPiece=[]; portTargets.forEach(m=>portByPiece[m.userData.accept]=m);
    // painel frontal simplificado para LED e botão de power
    B(external,1.88,4.2,.14,caseX,caseY,1.05,0x13181d); for(const y of [3.68,3.28])B(external,1.48,.3,.05,caseX,y,1.14,0x30363c); for(let k=0;k<12;k++)B(external,1.2,.045,.045,caseX,.74+k*.1,1.14,0x0e1217); for(const x of [caseX-.34,caseX+.02])B(external,.23,.1,.055,x,2.78,1.15,0x8394a1);
